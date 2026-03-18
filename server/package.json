@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
+    "@types/express-session": "^1.18.2",
     "@types/node": "^25.5.0",
     "eslint": "^10.0.3",
     "eslint-plugin-prettier": "^5.5.5",
@@ -23,6 +24,8 @@
     "vitest": "^4.1.0"
   },
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "postgres": "^3.4.8"
   }
 }
