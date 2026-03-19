@@ -3,6 +3,8 @@ import 'express-session';
 import { sql } from '../db';
 import cfg from '../config';
 import type { User } from '../types/models';
+import { fetchUserRepos, fetchRepoCommits, fetchRepoLanguages, fetchRepoBranches } from '../github/client';
+import { upsertRepo, insertCommits, upsertLanguage, upsertBranch } from '../db/queries';
 
 const authRouter = Router();
 
@@ -70,6 +72,74 @@ authRouter.get("/github/callback", async (req: Request, res: Response) => {
 
   req.session.accessToken = accessToken;
   req.session.userId = user.id;
+
+  // Background sync: fetch and upsert repos, commits, languages, branches
+  (async () => {
+    try {
+      // 1. Repos
+      const repos = await fetchUserRepos(accessToken);
+      const upsertedRepos = await Promise.all(
+        repos.map(async (repo: any) => {
+          return upsertRepo({
+            user_id: user.id,
+            github_id: repo.id,
+            name: repo.name,
+            full_name: repo.full_name,
+            description: repo.description,
+            language: repo.language,
+            stars: repo.stargazers_count,
+            forks: repo.forks_count,
+            open_issues: repo.open_issues_count,
+            has_readme: false,
+            default_branch: repo.default_branch,
+            pushed_at: repo.pushed_at ? new Date(repo.pushed_at) : null,
+            repo_created_at: repo.created_at ? new Date(repo.created_at) : null,
+            repo_updated_at: repo.updated_at ? new Date(repo.updated_at) : null,
+          });
+        })
+      );
+      // 2. Commits, Languages, Branches for each repo
+      for (const repo of upsertedRepos) {
+        // Commits (authored by user)
+        try {
+          const commits = await fetchRepoCommits(accessToken, repo.full_name.split('/')[0], repo.name, user.login);
+          const commitInserts = commits.map((commit: any) => ({
+            user_id: user.id,
+            repo_id: repo.id,
+            sha: commit.sha,
+            message: commit.commit?.message ?? '',
+            additions: commit.stats?.additions ?? 0,
+            deletions: commit.stats?.deletions ?? 0,
+            committed_at: commit.commit?.author?.date ? new Date(commit.commit.author.date) : new Date(),
+          }));
+          await insertCommits(commitInserts);
+        } catch {}
+        // Languages
+        try {
+          const langs = await fetchRepoLanguages(accessToken, repo.full_name.split('/')[0], repo.name);
+          for (const [language, bytes] of Object.entries(langs)) {
+            await upsertLanguage({ repo_id: repo.id, language, bytes: Number(bytes) });
+          }
+        } catch {}
+        // Branches
+        try {
+          const branches = await fetchRepoBranches(accessToken, repo.full_name.split('/')[0], repo.name);
+          for (const branch of branches) {
+            await upsertBranch({
+              repo_id: repo.id,
+              name: branch.name,
+              last_commit_sha: branch.commit?.sha ?? null,
+              last_commit_date: null,
+              is_default: branch.name === repo.default_branch,
+            });
+          }
+        } catch {}
+      }
+    } catch (err) {
+      // Log but don't block login
+      console.error('Background sync error:', err);
+    }
+  })();
 
   res.redirect(`${cfg.clientURL}/dashboard`);
 });

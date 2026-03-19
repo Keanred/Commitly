@@ -6,6 +6,8 @@ import authRouter from './routes/auth';
 import reposRouter from './routes/repos';
 import commitsRouter from './routes/commits';
 import weeklyRouter from './routes/weekly';
+import metricsRouter from './routes/metrics';
+import summaryRouter from './routes/summary';
 import session from 'express-session';
 import { requireAuth } from './middleware';
 
@@ -26,9 +28,12 @@ app.get('/', (req, res) => {
 });
 
 app.use('/auth', authRouter);
+
 app.use('/api/v1/stats', requireAuth, commitsRouter);
 app.use('/api/v1/stats', requireAuth, reposRouter);
+app.use('/api/v1/stats', requireAuth, metricsRouter);
 app.use('/api/v1/summary', requireAuth, weeklyRouter);
+app.use('/api/v1/summary', requireAuth, summaryRouter);
 
 server.setTimeout(cfg.apiServer.timeout);
 
