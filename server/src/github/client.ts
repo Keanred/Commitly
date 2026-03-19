@@ -100,6 +100,7 @@ export async function fetchGitHub<T = any>(
 
 /**
  * Fetch all paginated results from a GitHub API endpoint.
+ * Reuses fetchGitHub for auth, headers, and rate limit handling.
  * @param token GitHub OAuth access token
  * @param endpoint API endpoint (e.g. '/user/repos')
  * @param options Optional fetch options (params, etc.)
@@ -111,12 +112,13 @@ export async function fetchGitHubPaginated<T = any>(
   options: GitHubClientOptions = {}
 ): Promise<T[]> {
   let results: T[] = [];
-  let url = new URL(BASE_URL + endpoint);
+  let url: URL | null = new URL(BASE_URL + endpoint);
   if (options.params) {
-    Object.entries(options.params).forEach(([k, v]) => url.searchParams.append(k, String(v)));
+    Object.entries(options.params).forEach(([k, v]) => url!.searchParams.append(k, String(v)));
   }
   while (url) {
-    const res = await fetch(url.toString(), {
+    const currentUrl = url.toString();
+    const res: Response = await fetch(currentUrl, {
       method: options.method || 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -125,6 +127,14 @@ export async function fetchGitHubPaginated<T = any>(
       },
       body: options.body ? JSON.stringify(options.body) : undefined,
     });
+
+    // Rate limit handling (same as fetchGitHub)
+    if (res.status === 403 && res.headers.get('X-RateLimit-Remaining') === '0') {
+      const reset = res.headers.get('X-RateLimit-Reset');
+      const resetDate = reset ? new Date(Number(reset) * 1000) : null;
+      throw new Error(`GitHub API rate limit exceeded. Resets at ${resetDate}`);
+    }
+
     if (!res.ok) {
       const errText = await res.text();
       throw new Error(`GitHub API error: ${res.status} ${res.statusText} - ${errText}`);
@@ -136,9 +146,9 @@ export async function fetchGitHubPaginated<T = any>(
       results.push(pageData);
     }
     // Parse Link header for next page
-    const link = res.headers.get('link');
+    const link: string | null = res.headers.get('link');
     if (link) {
-      const match = link.match(/<([^>]+)>; rel="next"/);
+      const match: RegExpMatchArray | null = link.match(/<([^>]+)>; rel="next"/);
       url = match ? new URL(match[1]) : null;
     } else {
       url = null;

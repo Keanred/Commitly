@@ -19,39 +19,35 @@ type Config = {
   apiServer: APIConfig;
   db: DatabaseConfig;
   github: GitHubConfig;
+  sessionSecret: string;
   clientURL: string;
 };
 
 loadEnvFile();
 
-const parseEnvVariables = () => {
-  const BASE_URL = process.env.BASE_URL ?? 'http://localhost';
-  const PORT = process.env.PORT ?? '8080';
-  const DATABASE_URL = process.env.DATABASE_URL ?? '';
-  const TIMEOUT = process.env.TIMEOUT ?? '5000';
-  const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID ?? '';
-  const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET ?? '';
-  const CLIENT_URL = process.env.CLIENT_URL ?? 'http://localhost:5173';
-
-  return [BASE_URL, PORT, DATABASE_URL, TIMEOUT, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, CLIENT_URL];
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
 }
-
-const [BASE_URL, PORT, DATABASE_URL, TIMEOUT, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, CLIENT_URL] = parseEnvVariables();
 
 const cfg: Config = {
   apiServer: {
-    baseURL: BASE_URL,
-    port: parseInt(PORT),
-    timeout: parseInt(TIMEOUT),
+    baseURL: process.env.BASE_URL ?? 'http://localhost',
+    port: parseInt(process.env.PORT ?? '8080'),
+    timeout: parseInt(process.env.TIMEOUT ?? '5000'),
   },
   db: {
-    dbUrl: DATABASE_URL
+    dbUrl: requireEnv('DATABASE_URL'),
   },
   github: {
-    clientId: GITHUB_CLIENT_ID,
-    clientSecret: GITHUB_CLIENT_SECRET,
+    clientId: requireEnv('GITHUB_CLIENT_ID'),
+    clientSecret: requireEnv('GITHUB_CLIENT_SECRET'),
   },
-  clientURL: CLIENT_URL,
+  sessionSecret: requireEnv('SESSION_SECRET'),
+  clientURL: process.env.CLIENT_URL ?? 'http://localhost:5173',
 };
 
 export default cfg;

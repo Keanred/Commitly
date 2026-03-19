@@ -1,15 +1,12 @@
 import { Router, Request, Response } from 'express';
-import { getCommitsByRepo, getLanguagesByRepo, getBranchesByRepo } from 'src/db/queries';
-import { getReposByUser } from 'src/db/queries';
+import { getCommitsByUser, getLanguagesByRepo, getBranchesByRepo, getReposByUser } from '../db/queries';
+import type { Branch } from '../types/models';
 
 const metricsRouter = Router();
 
 metricsRouter.get('/commits/streak', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
-  const repos = await getReposByUser(userId);
-  const commitPromises = repos.map(repo => getCommitsByRepo(repo.id));
-  const commitArrays = await Promise.all(commitPromises);
-  const allCommits = commitArrays.flat();
+  const allCommits = await getCommitsByUser(userId);
   const commitDates = Array.from(new Set(allCommits.map(commit => commit.committed_at.toISOString().split('T')[0]))).sort();
 
   let currentStreak = 0;
@@ -23,24 +20,21 @@ metricsRouter.get('/commits/streak', async (req: Request, res: Response) => {
         currentStreak++;
       } else if (diffDays > 1) {
         longestStreak = Math.max(longestStreak, currentStreak);
-        currentStreak = 1; // reset streak
+        currentStreak = 1;
       }
     } else {
-      currentStreak = 1; // first commit
+      currentStreak = 1;
     }
     previousDate = date;
   }
   longestStreak = Math.max(longestStreak, currentStreak);
 
-  res.status(501).json({ streak: longestStreak });
+  res.json({ streak: longestStreak });
 });
 
 metricsRouter.get('/commits/by-hour', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
-  const repos = await getReposByUser(userId);
-  const commitPromises = repos.map(repo => getCommitsByRepo(repo.id));
-  const commitArrays = await Promise.all(commitPromises);
-  const allCommits = commitArrays.flat();
+  const allCommits = await getCommitsByUser(userId);
   const hourCounts: { [hour: number]: number } = {};
   for (let i = 0; i < 24; i++) {
     hourCounts[i] = 0;
@@ -50,34 +44,28 @@ metricsRouter.get('/commits/by-hour', async (req: Request, res: Response) => {
     hourCounts[hour]++;
   }
 
-  res.status(501).json({ commitByHour: hourCounts });
+  res.json({ commitByHour: hourCounts });
 });
 
 metricsRouter.get('/commits/by-day', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
-  const repos = await getReposByUser(userId);
-  const commitPromises = repos.map(repo => getCommitsByRepo(repo.id));
-  const commitArrays = await Promise.all(commitPromises);
-  const allCommits = commitArrays.flat();
+  const allCommits = await getCommitsByUser(userId);
   const dayCounts: { [day: number]: number } = {};
   for (let i = 0; i < 7; i++) {
     dayCounts[i] = 0;
   }
   for (const commit of allCommits) {
-    const day = new Date(commit.committed_at).getDay(); // Sunday=0, Monday=1, ..., Saturday=6
+    const day = new Date(commit.committed_at).getDay();
     dayCounts[day]++;
   }
-  res.status(501).json({ error: 'Not implemented' });
+  res.json({ commitByDay: dayCounts });
 });
 
 metricsRouter.get('/commits/history', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
-  const repos = await getReposByUser(userId);
-  const commitPromises = repos.map(repo => getCommitsByRepo(repo.id));
-  const commitArrays = await Promise.all(commitPromises);
-  const allCommits = commitArrays.flat();
+  const allCommits = await getCommitsByUser(userId);
   const today = new Date();
-  const pastDate = new Date(today.getTime() - 52 * 7 * 24 * 60 * 60 * 1000); // 52 weeks ago
+  const pastDate = new Date(today.getTime() - 52 * 7 * 24 * 60 * 60 * 1000);
   const dateCounts: { [date: string]: number } = {};
   for (const commit of allCommits) {
     const commitDate = new Date(commit.committed_at);
@@ -87,17 +75,14 @@ metricsRouter.get('/commits/history', async (req: Request, res: Response) => {
     }
   }
 
-  res.status(501).json({ error: 'Not implemented' });
+  res.json({ commitHistory: dateCounts });
 });
 
 metricsRouter.get('/commits/weekly', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
-  const repos = await getReposByUser(userId);
-  const commitPromises = repos.map(repo => getCommitsByRepo(repo.id));
-  const commitArrays = await Promise.all(commitPromises);
-  const allCommits = commitArrays.flat();
+  const allCommits = await getCommitsByUser(userId);
   const today = new Date();
-  const startOfWeek = new Date(today.getTime() - today.getDay() * 24 * 60 * 60 * 1000); // Sunday
+  const startOfWeek = new Date(today.getTime() - today.getDay() * 24 * 60 * 60 * 1000);
   const startOfLastWeek = new Date(startOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
 
   let thisWeekCount = 0;
@@ -113,14 +98,14 @@ metricsRouter.get('/commits/weekly', async (req: Request, res: Response) => {
   }
 
   const delta = thisWeekCount - lastWeekCount;
-  res.status(501).json({ error: 'Not implemented' });
+  res.json({ thisWeek: thisWeekCount, lastWeek: lastWeekCount, delta });
 });
 
 metricsRouter.get('/repos', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
   const repos = await getReposByUser(userId);
   const repoHealth = repos.map(repo => {
-    const lastCommitDate = new Date(repo.repo_updated_at || new Date()); // Assuming updated_at reflects last commit
+    const lastCommitDate = new Date(repo.repo_updated_at || new Date());
     const daysSinceLastCommit = (new Date().getTime() - lastCommitDate.getTime()) / (1000 * 60 * 60 * 24);
     let healthStatus = 'active';
     if (daysSinceLastCommit > 90) {
@@ -130,34 +115,29 @@ metricsRouter.get('/repos', async (req: Request, res: Response) => {
     }
     return { repoName: repo.name, healthStatus };
   });
-  res.status(501).json(repoHealth);
+  res.json(repoHealth);
 });
 
 metricsRouter.get('/repos/languages', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
   const repos = await getReposByUser(userId);
-  // Fetch language breakdown for each repo
   const languageArrays = await Promise.all(repos.map(repo => getLanguagesByRepo(repo.id)));
-  // Aggregate bytes for each language
   const languageTotals: { [lang: string]: number } = {};
   for (const langArr of languageArrays) {
-    // langArr is an array of Language objects
     for (const langObj of langArr) {
       const lang = langObj.language;
       const bytes = langObj.bytes;
       languageTotals[lang] = (languageTotals[lang] || 0) + bytes;
     }
   }
-  // Calculate percentages
   const totalBytes = Object.values(languageTotals).reduce((sum, bytes) => sum + bytes, 0);
   const languagePercentages: { [lang: string]: number } = {};
   for (const lang in languageTotals) {
-    languagePercentages[lang] = totalBytes > 0 ? Math.round((languageTotals[lang] / totalBytes) * 1000) / 10 : 0; // 1 decimal place
+    languagePercentages[lang] = totalBytes > 0 ? Math.round((languageTotals[lang] / totalBytes) * 1000) / 10 : 0;
   }
   res.json({ bytes: languageTotals, percentages: languagePercentages });
 });
 
-metricsRouter.get('/repos/stale-branches', (req: Request, res: Response) => {
 metricsRouter.get('/repos/stale-branches', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
   const repos = await getReposByUser(userId);
@@ -167,19 +147,18 @@ metricsRouter.get('/repos/stale-branches', async (req: Request, res: Response) =
   for (const repo of repos) {
     const branches = await getBranchesByRepo(repo.id);
     const staleBranches = branches
-      .filter((branch: import('src/types/models').Branch) => {
-        if (!branch.last_commit_date) return true; // treat branches with no commit as stale
+      .filter((branch: Branch) => {
+        if (!branch.last_commit_date) return true;
         const daysAgo = (now.getTime() - branch.last_commit_date.getTime()) / (1000 * 60 * 60 * 24);
         return daysAgo > staleThresholdDays;
       })
-      .map((branch: import('src/types/models').Branch) => ({
+      .map((branch: Branch) => ({
         branch: branch.name,
         lastCommitDate: branch.last_commit_date ? branch.last_commit_date.toISOString() : null
       }));
     result[repo.name] = staleBranches;
   }
   res.json(result);
-});
 });
 
 export default metricsRouter;
