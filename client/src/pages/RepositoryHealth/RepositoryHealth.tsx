@@ -29,7 +29,6 @@ const RepositoryHealth = () => (
           </Box>
         }
       />
-
       <Box
         sx={{
           display: "grid",
@@ -41,7 +40,6 @@ const RepositoryHealth = () => (
         <Box sx={{ gridColumn: { lg: "span 8" } }}>
           <GlobalIntegrityCard />
         </Box>
-
         {/* Side metrics */}
         <Box
           sx={{
@@ -68,12 +66,10 @@ const RepositoryHealth = () => (
             })}
           />
         </Box>
-
         {/* Active Repositories */}
         <Box sx={{ gridColumn: { xs: "1 / -1", xl: "span 7" } }}>
           <ActiveReposSection />
         </Box>
-
         {/* Neglected Repositories */}
         <Box sx={{ gridColumn: { xs: "1 / -1", xl: "span 5" } }}>
           <NeglectedReposSection />

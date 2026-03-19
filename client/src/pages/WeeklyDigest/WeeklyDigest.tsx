@@ -15,7 +15,6 @@ const WeeklyDigest = () => (
         subtitle="March 11 — March 17, 2024. An algorithmic reconstruction of your engineering velocity and architectural impact."
       />
     </Box>
-
     <Box
       sx={{
         display: "grid",
@@ -25,7 +24,6 @@ const WeeklyDigest = () => (
     >
       {/* Row 1: Narrative + Sidebar cards */}
       <NarrativeSummaryCard />
-
       <Box
         sx={{
           gridColumn: { xs: "span 12", lg: "span 4" },
@@ -37,7 +35,6 @@ const WeeklyDigest = () => (
         <ConsistencyScoreCard />
         <TechStackPulseCard />
       </Box>
-
       {/* Row 2: Contributions + Outlook */}
       <TopContributionsCard />
       <PredictiveOutlookCard />

@@ -8,9 +8,25 @@ import CommitStreakCard from "./CommitStreakCard"
 import PeakHoursCard from "./PeakHoursCard"
 import ProductiveDaysCard from "./ProductiveDaysCard"
 import WeeklyGlanceCard from "./WeeklyGlanceCard"
+import { useAuth } from "../../AuthContext"
+import LoadingScreen from "../LoadingScreen"
 
-const Dashboard = () => {
+const Dashboard: React.FC = () => {
   const theme = useTheme()
+  const { user, loading, error } = useAuth()
+
+  if (loading) {
+    return <LoadingScreen />
+  }
+  if (error) {
+    return (
+      <Box sx={{ p: 4 }}>
+        <Typography variant="h6" color="error">
+          Error loading user data: {error.message}
+        </Typography>
+      </Box>
+    )
+  }
 
   return (
   <DashboardLayout>
