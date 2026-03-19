@@ -1,118 +1,185 @@
 import { Router, Request, Response } from 'express';
+import { getCommitsByRepo, getLanguagesByRepo, getBranchesByRepo } from 'src/db/queries';
+import { getReposByUser } from 'src/db/queries';
 
 const metricsRouter = Router();
 
-// Commit streaks
-// Returns the user's current and longest commit streak (consecutive days with at least one commit).
-/*
-Returns the user's current and longest commit streak (consecutive days with at least one commit).
-Steps:
-1. Query all commit dates for the user, ordered chronologically.
-2. Normalize dates to remove time (count only unique days).
-3. Iterate through the days, counting consecutive streaks.
-4. Track the current streak and the longest streak found.
-5. Return both streaks in the response.
-*/
-metricsRouter.get('/commits/streak', (req: Request, res: Response) => {
+metricsRouter.get('/commits/streak', async (req: Request, res: Response) => {
+  const userId = req.session.userId as number;
+  const repos = await getReposByUser(userId);
+  const commitPromises = repos.map(repo => getCommitsByRepo(repo.id));
+  const commitArrays = await Promise.all(commitPromises);
+  const allCommits = commitArrays.flat();
+  const commitDates = Array.from(new Set(allCommits.map(commit => commit.committed_at.toISOString().split('T')[0]))).sort();
+
+  let currentStreak = 0;
+  let longestStreak = 0;
+  let previousDate: string | null = null;
+
+  for (const date of commitDates) {
+    if (previousDate) {
+      const diffDays = (new Date(date).getTime() - new Date(previousDate).getTime()) / (1000 * 60 * 60 * 24);
+      if (diffDays === 1) {
+        currentStreak++;
+      } else if (diffDays > 1) {
+        longestStreak = Math.max(longestStreak, currentStreak);
+        currentStreak = 1; // reset streak
+      }
+    } else {
+      currentStreak = 1; // first commit
+    }
+    previousDate = date;
+  }
+  longestStreak = Math.max(longestStreak, currentStreak);
+
+  res.status(501).json({ streak: longestStreak });
+});
+
+metricsRouter.get('/commits/by-hour', async (req: Request, res: Response) => {
+  const userId = req.session.userId as number;
+  const repos = await getReposByUser(userId);
+  const commitPromises = repos.map(repo => getCommitsByRepo(repo.id));
+  const commitArrays = await Promise.all(commitPromises);
+  const allCommits = commitArrays.flat();
+  const hourCounts: { [hour: number]: number } = {};
+  for (let i = 0; i < 24; i++) {
+    hourCounts[i] = 0;
+  }
+  for (const commit of allCommits) {
+    const hour = new Date(commit.committed_at).getHours();
+    hourCounts[hour]++;
+  }
+
+  res.status(501).json({ commitByHour: hourCounts });
+});
+
+metricsRouter.get('/commits/by-day', async (req: Request, res: Response) => {
+  const userId = req.session.userId as number;
+  const repos = await getReposByUser(userId);
+  const commitPromises = repos.map(repo => getCommitsByRepo(repo.id));
+  const commitArrays = await Promise.all(commitPromises);
+  const allCommits = commitArrays.flat();
+  const dayCounts: { [day: number]: number } = {};
+  for (let i = 0; i < 7; i++) {
+    dayCounts[i] = 0;
+  }
+  for (const commit of allCommits) {
+    const day = new Date(commit.committed_at).getDay(); // Sunday=0, Monday=1, ..., Saturday=6
+    dayCounts[day]++;
+  }
   res.status(501).json({ error: 'Not implemented' });
 });
 
-// Commits by hour
-// Returns a histogram of the user's commits grouped by hour of day (0–23).
-/*
-Returns a histogram of the user's commits grouped by hour of day (0–23).
-Steps:
-1. Query all commits for the user.
-2. Extract the hour from each commit's timestamp.
-3. Count the number of commits for each hour (0–23).
-4. Return an array or object mapping each hour to its commit count.
-*/
-metricsRouter.get('/commits/by-hour', (req: Request, res: Response) => {
+metricsRouter.get('/commits/history', async (req: Request, res: Response) => {
+  const userId = req.session.userId as number;
+  const repos = await getReposByUser(userId);
+  const commitPromises = repos.map(repo => getCommitsByRepo(repo.id));
+  const commitArrays = await Promise.all(commitPromises);
+  const allCommits = commitArrays.flat();
+  const today = new Date();
+  const pastDate = new Date(today.getTime() - 52 * 7 * 24 * 60 * 60 * 1000); // 52 weeks ago
+  const dateCounts: { [date: string]: number } = {};
+  for (const commit of allCommits) {
+    const commitDate = new Date(commit.committed_at);
+    if (commitDate >= pastDate) {
+      const dateKey = commitDate.toISOString().split('T')[0];
+      dateCounts[dateKey] = (dateCounts[dateKey] || 0) + 1;
+    }
+  }
+
   res.status(501).json({ error: 'Not implemented' });
 });
 
-// Commits by day
-// Returns a histogram of the user's commits grouped by day of week (Monday–Sunday).
-/*
-Returns a histogram of the user's commits grouped by day of week (Monday–Sunday).
-Steps:
-1. Query all commits for the user.
-2. Extract the day of week from each commit's timestamp.
-3. Count the number of commits for each day (0–6 or Monday–Sunday).
-4. Return an array or object mapping each day to its commit count.
-*/
-metricsRouter.get('/commits/by-day', (req: Request, res: Response) => {
+metricsRouter.get('/commits/weekly', async (req: Request, res: Response) => {
+  const userId = req.session.userId as number;
+  const repos = await getReposByUser(userId);
+  const commitPromises = repos.map(repo => getCommitsByRepo(repo.id));
+  const commitArrays = await Promise.all(commitPromises);
+  const allCommits = commitArrays.flat();
+  const today = new Date();
+  const startOfWeek = new Date(today.getTime() - today.getDay() * 24 * 60 * 60 * 1000); // Sunday
+  const startOfLastWeek = new Date(startOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  let thisWeekCount = 0;
+  let lastWeekCount = 0;
+
+  for (const commit of allCommits) {
+    const commitDate = new Date(commit.committed_at);
+    if (commitDate >= startOfWeek) {
+      thisWeekCount++;
+    } else if (commitDate >= startOfLastWeek && commitDate < startOfWeek) {
+      lastWeekCount++;
+    }
+  }
+
+  const delta = thisWeekCount - lastWeekCount;
   res.status(501).json({ error: 'Not implemented' });
 });
 
-// Contribution grid (history)
-// Returns a contribution grid (e.g., last 52 weeks) showing the number of commits per day.
-/*
-Returns a contribution grid (e.g., last 52 weeks) showing the number of commits per day.
-Steps:
-1. Query all commits for the user from the last 52 weeks.
-2. Group commits by date (YYYY-MM-DD).
-3. For each day, count the number of commits.
-4. Return a date-to-count mapping for the grid.
-*/
-metricsRouter.get('/commits/history', (req: Request, res: Response) => {
-  res.status(501).json({ error: 'Not implemented' });
+metricsRouter.get('/repos', async (req: Request, res: Response) => {
+  const userId = req.session.userId as number;
+  const repos = await getReposByUser(userId);
+  const repoHealth = repos.map(repo => {
+    const lastCommitDate = new Date(repo.repo_updated_at || new Date()); // Assuming updated_at reflects last commit
+    const daysSinceLastCommit = (new Date().getTime() - lastCommitDate.getTime()) / (1000 * 60 * 60 * 24);
+    let healthStatus = 'active';
+    if (daysSinceLastCommit > 90) {
+      healthStatus = 'abandoned';
+    } else if (daysSinceLastCommit > 30) {
+      healthStatus = 'neglected';
+    }
+    return { repoName: repo.name, healthStatus };
+  });
+  res.status(501).json(repoHealth);
 });
 
-// Weekly commit stats
-// Returns this week's commit count and the delta compared to last week.
-/*
-Returns this week's commit count and the delta compared to last week.
-Steps:
-1. Query all commits for the user from the last two weeks.
-2. Count commits for the current week and the previous week.
-3. Calculate the difference (delta) between the two weeks.
-4. Return both counts and the delta.
-*/
-metricsRouter.get('/commits/weekly', (req: Request, res: Response) => {
-  res.status(501).json({ error: 'Not implemented' });
+metricsRouter.get('/repos/languages', async (req: Request, res: Response) => {
+  const userId = req.session.userId as number;
+  const repos = await getReposByUser(userId);
+  // Fetch language breakdown for each repo
+  const languageArrays = await Promise.all(repos.map(repo => getLanguagesByRepo(repo.id)));
+  // Aggregate bytes for each language
+  const languageTotals: { [lang: string]: number } = {};
+  for (const langArr of languageArrays) {
+    // langArr is an array of Language objects
+    for (const langObj of langArr) {
+      const lang = langObj.language;
+      const bytes = langObj.bytes;
+      languageTotals[lang] = (languageTotals[lang] || 0) + bytes;
+    }
+  }
+  // Calculate percentages
+  const totalBytes = Object.values(languageTotals).reduce((sum, bytes) => sum + bytes, 0);
+  const languagePercentages: { [lang: string]: number } = {};
+  for (const lang in languageTotals) {
+    languagePercentages[lang] = totalBytes > 0 ? Math.round((languageTotals[lang] / totalBytes) * 1000) / 10 : 0; // 1 decimal place
+  }
+  res.json({ bytes: languageTotals, percentages: languagePercentages });
 });
 
-// Repo health
-// Returns a list of the user's repositories with health status (active, neglected, abandoned).
-/*
-Returns a list of the user's repositories with health status (active, neglected, abandoned).
-Steps:
-1. Query all repos for the user, including last commit date.
-2. Define thresholds for active, neglected, and abandoned (e.g., active: <30 days, neglected: 30–90 days, abandoned: >90 days since last commit).
-3. For each repo, determine its health status based on last commit date.
-4. Return the list of repos with their health status.
-*/
-metricsRouter.get('/repos', (req: Request, res: Response) => {
-  res.status(501).json({ error: 'Not implemented' });
-});
-
-// Languages breakdown
-// Returns an aggregated breakdown of languages used across all user repositories.
-/*
-Returns an aggregated breakdown of languages used across all user repositories.
-Steps:
-1. Query all language records for the user's repos.
-2. Sum the bytes for each language across all repos.
-3. Calculate percentages if desired.
-4. Return an object mapping each language to its total bytes (and/or percentage).
-*/
-metricsRouter.get('/repos/languages', (req: Request, res: Response) => {
-  res.status(501).json({ error: 'Not implemented' });
-});
-
-// Stale branches
-// Returns a count or list of stale branches (not updated recently) per repository.
-/*
-Returns a count or list of stale branches (not updated recently) per repository.
-Steps:
-1. Query all branches for the user's repos, including last commit date.
-2. Define a threshold for staleness (e.g., not updated in 90+ days).
-3. For each repo, count or list branches that are stale.
-4. Return the count or list per repo.
-*/
 metricsRouter.get('/repos/stale-branches', (req: Request, res: Response) => {
-  res.status(501).json({ error: 'Not implemented' });
+metricsRouter.get('/repos/stale-branches', async (req: Request, res: Response) => {
+  const userId = req.session.userId as number;
+  const repos = await getReposByUser(userId);
+  const staleThresholdDays = 90;
+  const now = new Date();
+  const result: { [repoName: string]: Array<{ branch: string; lastCommitDate: string | null }> } = {};
+  for (const repo of repos) {
+    const branches = await getBranchesByRepo(repo.id);
+    const staleBranches = branches
+      .filter((branch: import('src/types/models').Branch) => {
+        if (!branch.last_commit_date) return true; // treat branches with no commit as stale
+        const daysAgo = (now.getTime() - branch.last_commit_date.getTime()) / (1000 * 60 * 60 * 24);
+        return daysAgo > staleThresholdDays;
+      })
+      .map((branch: import('src/types/models').Branch) => ({
+        branch: branch.name,
+        lastCommitDate: branch.last_commit_date ? branch.last_commit_date.toISOString() : null
+      }));
+    result[repo.name] = staleBranches;
+  }
+  res.json(result);
+});
 });
 
 export default metricsRouter;
