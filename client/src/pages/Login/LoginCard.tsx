@@ -38,7 +38,7 @@ const LoginCard = () => {
             Unlock Your Engineering Insights
           </Typography>
           <Typography variant="body2" sx={{ color: 'onSurfaceVariant', lineHeight: 1.6, maxWidth: 280, mx: 'auto' }}>
-            Connect your Github account to analyze your commit history and gain powerful insights into your coding patterns and productivity.
+            Connect your GitHub to uncover patterns in your commit history and sharpen your workflow.
           </Typography>
         </Box>
 

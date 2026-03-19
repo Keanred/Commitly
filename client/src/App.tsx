@@ -1,7 +1,8 @@
-import Login from "./pages/Login"
+import { RouterProvider } from "@tanstack/react-router"
+import { router } from "./router"
 
 const App = () => {
-  return <Login />
+  return <RouterProvider router={router} />
 }
 
 export default App
