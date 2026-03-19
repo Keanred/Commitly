@@ -5,6 +5,7 @@ export interface User {
   name: string | null;
   avatar_url: string | null;
   access_token: string;
+  last_synced_at: Date | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -69,7 +70,7 @@ export interface WeeklySummary {
 
 // Insert types — omit auto-generated fields
 
-export type UserInsert = Omit<User, 'id' | 'created_at' | 'updated_at'>;
+export type UserInsert = Omit<User, 'id' | 'last_synced_at' | 'created_at' | 'updated_at'>;
 
 export type RepoInsert = Omit<Repo, 'id' | 'fetched_at'>;
 

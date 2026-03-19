@@ -3,7 +3,7 @@ import cfg from '../config';
 import type { User } from '../types/models';
 import { fetchGitHub } from '../github/client';
 import { upsertUser, getUserById } from '../db/queries';
-import { syncUserData } from '../github/sync';
+import { syncUserData, needsSync } from '../github/sync';
 
 const authRouter = Router();
 
@@ -66,10 +66,12 @@ authRouter.get("/github/callback", async (req: Request, res: Response) => {
   req.session.accessToken = accessToken;
   req.session.userId = user.id;
 
-  // Background sync — don't block the redirect
-  syncUserData(user, accessToken).catch(err => {
-    console.error('Background sync error:', err);
-  });
+  // Background sync — only if not recently synced
+  if (needsSync(user)) {
+    syncUserData(user, accessToken).catch(err => {
+      console.error('Background sync error:', err);
+    });
+  }
 
   res.redirect(`${cfg.clientURL}/dashboard`);
 });

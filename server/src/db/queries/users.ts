@@ -11,6 +11,10 @@ export async function getUserByGithubId(githubId: number): Promise<User | null> 
   return user || null;
 }
 
+export async function updateLastSyncedAt(userId: number): Promise<void> {
+  await sql`UPDATE users SET last_synced_at = now() WHERE id = ${userId}`;
+}
+
 export async function upsertUser(user: UserInsert): Promise<User> {
   const [result] = await sql<User[]>`
     INSERT INTO users (github_id, login, name, avatar_url, access_token)

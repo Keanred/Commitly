@@ -9,6 +9,7 @@ export async function migrate() {
       name            TEXT,
       avatar_url      TEXT,
       access_token    TEXT NOT NULL,
+      last_synced_at  TIMESTAMPTZ,
       created_at      TIMESTAMPTZ DEFAULT now(),
       updated_at      TIMESTAMPTZ DEFAULT now()
     )
