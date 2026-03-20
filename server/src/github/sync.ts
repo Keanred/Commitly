@@ -2,12 +2,11 @@ import type { User } from '../types/models';
 import { fetchUserRepos, fetchRepoCommits, fetchRepoLanguages, fetchRepoBranches } from './client';
 import { mapGitHubRepo, mapGitHubCommit } from './mappers';
 import { upsertRepo, insertCommits, upsertLanguage, upsertBranch, updateLastSyncedAt } from '../db/queries';
-
-const SYNC_COOLDOWN_MS = 6 * 60 * 60 * 1000; // 6 hours
+import cfg from '../config';
 
 export function needsSync(user: User): boolean {
   if (!user.last_synced_at) return true;
-  return Date.now() - new Date(user.last_synced_at).getTime() > SYNC_COOLDOWN_MS;
+  return Date.now() - new Date(user.last_synced_at).getTime() > cfg.github.syncCooldownMs;
 }
 
 export async function syncUserData(user: User, accessToken: string): Promise<void> {

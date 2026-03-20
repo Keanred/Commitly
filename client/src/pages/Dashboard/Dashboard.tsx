@@ -1,4 +1,4 @@
-import { Box, Typography } from "@mui/material"
+import { Alert, Box, Snackbar, Typography } from "@mui/material"
 import { alpha, useTheme } from "@mui/material/styles"
 import DashboardLayout from "../../components/DashboardLayout"
 import RepoCard from "../../components/RepoCard"
@@ -10,26 +10,42 @@ import ProductiveDaysCard from "./ProductiveDaysCard"
 import WeeklyGlanceCard from "./WeeklyGlanceCard"
 import { useAuth } from "../../AuthContext"
 import LoadingScreen from "../LoadingScreen"
+import { useDashboardData } from "../../hooks/useDashboardData"
+import { useState, useCallback } from "react"
 
 const Dashboard: React.FC = () => {
   const theme = useTheme()
-  const { user, loading, error } = useAuth()
+  const { authUser, authLoading, authError } = useAuth()
+  const { streak , isDashboardLoading, error} = useDashboardData();
+  const isLoading = authLoading || isDashboardLoading;
 
-  if (loading) {
+  const [dismissed, setDismissed] = useState(false)
+  const hasError = !!(error || authError)
+  const toastOpen = hasError && !dismissed
+  const toastMessage = error?.message || authError?.message
+
+  const handleClose = useCallback(() => setDismissed(true), [])
+
+  if (isLoading) {
     return <LoadingScreen />
-  }
-  if (error) {
-    return (
-      <Box sx={{ p: 4 }}>
-        <Typography variant="h6" color="error">
-          Error loading user data: {error.message}
-        </Typography>
-      </Box>
-    )
   }
 
   return (
   <DashboardLayout>
+    <Snackbar
+      open={toastOpen}
+      autoHideDuration={6000}
+      onClose={handleClose}
+      anchorOrigin={{ vertical: "top", horizontal: "right" }}
+    >
+      <Alert
+        onClose={handleClose}
+        severity="error"
+        variant="filled"
+      >
+        {toastMessage}
+      </Alert>
+    </Snackbar>
     {/* Engineering Overview */}
     <Box component="section" sx={{ mb: 6 }}>
       <SectionHeader
@@ -65,7 +81,7 @@ const Dashboard: React.FC = () => {
           gap: 3,
         }}
       >
-        <CommitStreakCard />
+        <CommitStreakCard commitStreak={streak}/>
         <PeakHoursCard />
         <ProductiveDaysCard />
         <WeeklyGlanceCard />

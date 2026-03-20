@@ -2,7 +2,7 @@ import type { User } from './types/User';
 
 export const fetchUser = async (): Promise<User | null> => {
   try {
-    const response = await fetch('/api/auth/me');
+    const response = await fetch('/auth/me');
     if (!response.ok) {
       throw new Error('Failed to fetch user');
     }
@@ -25,7 +25,7 @@ export const fetchUser = async (): Promise<User | null> => {
 
 export const logoutUser = async (): Promise<void> => {
   try {
-    const response = await fetch('/api/auth/logout', {
+    const response = await fetch('/auth/logout', {
       method: 'POST',
     });
     if (!response.ok) {

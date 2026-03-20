@@ -13,6 +13,7 @@ type DatabaseConfig = {
 type GitHubConfig = {
   clientId: string;
   clientSecret: string;
+  syncCooldownMs: number;
 }
 
 type Config = {
@@ -45,6 +46,7 @@ const cfg: Config = {
   github: {
     clientId: requireEnv('GITHUB_CLIENT_ID'),
     clientSecret: requireEnv('GITHUB_CLIENT_SECRET'),
+    syncCooldownMs: 24 * 60 * 60 * 1000, // 24 hours
   },
   sessionSecret: requireEnv('SESSION_SECRET'),
   clientURL: process.env.CLIENT_URL ?? 'http://localhost:5173',

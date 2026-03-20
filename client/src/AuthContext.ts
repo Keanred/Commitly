@@ -4,19 +4,19 @@ import { fetchUser, logoutUser } from './auth-utils';
 import { useContext } from 'react';
 
 export interface AuthContextType {
-  user: User | null;
+  authUser: User | null;
   isAuthenticated: boolean;
-  loading: boolean;
-  error: Error | null;
+  authLoading: boolean;
+  authError: Error | null;
   refreshUser: () => Promise<User | null>;
   logout: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType>({
-  user: null,
+  authUser: null,
   isAuthenticated: false,
-  loading: true,
-  error: null,
+  authLoading: true,
+  authError: null,
   refreshUser: fetchUser,
   logout: logoutUser,
 });

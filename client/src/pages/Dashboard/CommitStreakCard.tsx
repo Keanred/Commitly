@@ -1,8 +1,12 @@
 import { Box, Typography } from "@mui/material"
 import ContributionGrid from "../../components/ContributionGrid"
 import Icon from "../../components/Icon"
+import type { CommitStreakData } from "../../hooks/useCommitMetrics"
 
-const CommitStreakCard = () => (
+type CommitStreakCardProps = {
+  streak: CommitStreakData
+}
+const CommitStreakCard = (props: CommitStreakCardProps) => (
   <Box
     sx={{
       gridColumn: { xs: "span 12", lg: "span 8" },
@@ -38,7 +42,7 @@ const CommitStreakCard = () => (
             lineHeight: 1,
           }}
         >
-          14
+          {props.streak.currentStreak}
         </Typography>
         <Typography sx={{ color: "onSurfaceVariant", fontWeight: 500 }}>
           Days active
