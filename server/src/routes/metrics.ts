@@ -29,7 +29,7 @@ metricsRouter.get('/commits/streak', async (req: Request, res: Response) => {
   }
   longestStreak = Math.max(longestStreak, currentStreak);
 
-  res.json({ streak: longestStreak });
+  res.json({ currentStreak, longestStreak });
 });
 
 metricsRouter.get('/commits/by-hour', async (req: Request, res: Response) => {

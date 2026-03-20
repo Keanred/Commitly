@@ -1,14 +1,17 @@
 import { Box } from "@mui/material"
 import DashboardLayout from "../../components/DashboardLayout"
 import SectionHeader from "../../components/SectionHeader"
+import { useAuth } from "../../AuthContext"
 import NarrativeSummaryCard from "./NarrativeSummaryCard"
 import ConsistencyScoreCard from "./ConsistencyScoreCard"
 import TechStackPulseCard from "./TechStackPulseCard"
 import TopContributionsCard from "./TopContributionsCard"
 import PredictiveOutlookCard from "./PredictiveOutlookCard"
 
-const WeeklyDigest = () => (
-  <DashboardLayout activeNav="Weekly Digest">
+const WeeklyDigest = () => {
+  const { authUser } = useAuth()
+  return (
+  <DashboardLayout activeNav="Weekly Digest" avatarUrl={authUser?.avatar_url ?? undefined}>
     <Box component="section" sx={{ mb: 6 }}>
       <SectionHeader
         title="Weekly Narrative Digest"
@@ -40,6 +43,7 @@ const WeeklyDigest = () => (
       <PredictiveOutlookCard />
     </Box>
   </DashboardLayout>
-)
+  )
+}
 
 export default WeeklyDigest

@@ -1,4 +1,4 @@
-import { Alert, Box, Snackbar, Typography } from "@mui/material"
+import { Alert, Avatar, Box, Snackbar, Typography } from "@mui/material"
 import { alpha, useTheme } from "@mui/material/styles"
 import DashboardLayout from "../../components/DashboardLayout"
 import RepoCard from "../../components/RepoCard"
@@ -31,7 +31,7 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-  <DashboardLayout>
+  <DashboardLayout avatarUrl={authUser?.avatar_url ?? undefined}>
     <Snackbar
       open={toastOpen}
       autoHideDuration={6000}
@@ -48,6 +48,17 @@ const Dashboard: React.FC = () => {
     </Snackbar>
     {/* Engineering Overview */}
     <Box component="section" sx={{ mb: 6 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+        <Avatar src={authUser?.avatar_url ?? undefined} sx={{ width: 48, height: 48 }} />
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 600 }}>
+            Welcome back, {authUser?.name || authUser?.login}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Here's your engineering overview
+          </Typography>
+        </Box>
+      </Box>
       <SectionHeader
         title="Engineering Overview"
         subtitle={

@@ -1,14 +1,17 @@
 import { alpha, Box } from "@mui/material"
 import DashboardLayout from "../../components/DashboardLayout"
 import SectionHeader from "../../components/SectionHeader"
+import { useAuth } from "../../AuthContext"
 import FilterSelect from "../../components/FilterSelect"
 import MetricCard from "../../components/MetricCard"
 import GlobalIntegrityCard from "./GlobalIntegrityCard"
 import ActiveReposSection from "./ActiveReposSection"
 import NeglectedReposSection from "./NeglectedReposSection"
 
-const RepositoryHealth = () => (
-  <DashboardLayout activeNav="Repo Health">
+const RepositoryHealth = () => {
+  const { authUser } = useAuth()
+  return (
+  <DashboardLayout activeNav="Repo Health" avatarUrl={authUser?.avatar_url ?? undefined}>
     <Box sx={{ maxWidth: 1200, mx: "auto" }}>
       <SectionHeader
         title="Repository Health"
@@ -77,6 +80,7 @@ const RepositoryHealth = () => (
       </Box>
     </Box>
   </DashboardLayout>
-)
+  )
+}
 
 export default RepositoryHealth
