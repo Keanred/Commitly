@@ -1,7 +1,8 @@
-import { Alert, Avatar, Box, Snackbar, Typography } from '@mui/material';
+import { Alert, Avatar, Box, Button, Snackbar, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useCallback, useState } from 'react';
 import { useAuth } from '../../AuthContext';
+import { useRouter } from '@tanstack/react-router';
 import Badge from '../../components/Badge';
 import DashboardLayout from '../../components/DashboardLayout';
 import RepoCard from '../../components/RepoCard';
@@ -15,7 +16,8 @@ import WeeklyGlanceCard from './WeeklyGlanceCard';
 
 const Dashboard: React.FC = () => {
   const theme = useTheme();
-  const { authUser, authLoading, authError } = useAuth();
+  const { authUser, authLoading, authError, logout } = useAuth();
+  const router = useRouter();
   const { streak, commitByHour, commitByDay, weeklyCommitData, weeklyPRData, weeklyQualityData, commitHistory, isDashboardLoading, error } =
     useDashboardData();
   const isLoading = authLoading || isDashboardLoading;
@@ -55,6 +57,17 @@ const Dashboard: React.FC = () => {
               Here's your engineering overview
             </Typography>
           </Box>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={async () => {
+              await logout();
+              router.navigate({ to: '/' });
+            }}
+            sx={{ ml: 'auto' }}
+          >
+            Logout
+          </Button>
         </Box>
         <SectionHeader
           title="Engineering Overview"

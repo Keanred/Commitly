@@ -31,7 +31,7 @@ const dashboardRoute = createRoute({
   path: "/dashboard",
   component: Dashboard,
   beforeLoad: ({ context, location }) => {
-    if (!context.auth.isAuthenticated) {
+    if (!context.auth.authLoading && !context.auth.isAuthenticated) {
       throw redirect({
         to: "/",
         search: { redirect: location.href },
@@ -45,7 +45,7 @@ const weeklyDigestRoute = createRoute({
   path: "/weekly-digest",
   component: WeeklyDigest,
   beforeLoad: ({ context, location }) => {
-    if (!context.auth.isAuthenticated) {
+    if (!context.auth.authLoading && !context.auth.isAuthenticated) {
       throw redirect({
         to: "/",
         search: { redirect: location.href },
@@ -59,7 +59,7 @@ const repoHealthRoute = createRoute({
   path: "/repo-health",
   component: RepositoryHealth,
   beforeLoad: ({ context, location }) => {
-    if (!context.auth.isAuthenticated) {
+    if (!context.auth.authLoading && !context.auth.isAuthenticated) {
       throw redirect({
         to: "/",
         search: { redirect: location.href },

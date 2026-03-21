@@ -11,19 +11,18 @@ export async function getCommitsByUser(userId: number): Promise<Commit[]> {
 
 export async function insertCommits(commits: CommitInsert[]): Promise<void> {
   if (commits.length === 0) return;
-  const rows = commits.map(commit => [
-    commit.user_id,
-    commit.repo_id,
-    commit.sha,
-    commit.message ?? '',
-    commit.additions,
-    commit.deletions,
-    commit.committed_at instanceof Date ? commit.committed_at.toISOString() : commit.committed_at,
-    new Date().toISOString()
-  ]);
+  const rows = commits.map(commit => ({
+    user_id: commit.user_id,
+    repo_id: commit.repo_id,
+    sha: commit.sha,
+    message: commit.message ?? '',
+    additions: commit.additions,
+    deletions: commit.deletions,
+    committed_at: commit.committed_at instanceof Date ? commit.committed_at.toISOString() : commit.committed_at,
+    fetched_at: new Date().toISOString()
+  }));
   await sql`
-    INSERT INTO commits (user_id, repo_id, sha, message, additions, deletions, committed_at, fetched_at)
-    ${sql(rows)}
+    INSERT INTO commits ${sql(rows, 'user_id', 'repo_id', 'sha', 'message', 'additions', 'deletions', 'committed_at', 'fetched_at')}
     ON CONFLICT (repo_id, sha) DO NOTHING
   `;
 }
