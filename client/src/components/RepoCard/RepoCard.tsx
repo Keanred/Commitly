@@ -42,7 +42,7 @@ const RepoCard = ({
   branch,
   lastActivity,
 }: RepoCardProps) => {
-  const config = statusConfig[status]
+  const config = statusConfig[status] ?? statusConfig.healthy
   const isFailing = status === "failing"
 
   return (

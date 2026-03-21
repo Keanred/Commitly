@@ -93,7 +93,7 @@ export async function migrate() {
       id              SERIAL PRIMARY KEY,
       user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       repo_id         INTEGER NOT NULL REFERENCES repos(id) ON DELETE CASCADE,
-      github_id       INTEGER NOT NULL,
+      github_id       BIGINT NOT NULL,
       number          INTEGER NOT NULL,
       title           TEXT NOT NULL,
       state           TEXT NOT NULL,

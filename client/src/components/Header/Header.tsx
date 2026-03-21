@@ -1,12 +1,18 @@
-import { Box, InputBase, IconButton } from "@mui/material"
+import { Box, InputBase, IconButton, Button } from "@mui/material"
 import { alpha } from "@mui/material/styles"
+import { useRouter } from "@tanstack/react-router"
+import { useAuth } from "../../AuthContext"
 import Icon from "../Icon"
 
 interface HeaderProps {
   avatarUrl?: string
 }
 
-const Header = ({ avatarUrl }: HeaderProps) => (
+const Header = ({ avatarUrl }: HeaderProps) => {
+  const { logout } = useAuth()
+  const router = useRouter()
+
+  return (
   <Box
     component="header"
     sx={{
@@ -90,8 +96,19 @@ const Header = ({ avatarUrl }: HeaderProps) => (
           }}
         />
       )}
+      <Button
+        variant="outlined"
+        size="small"
+        onClick={async () => {
+          await logout()
+          router.navigate({ to: '/' })
+        }}
+      >
+        Logout
+      </Button>
     </Box>
   </Box>
-)
+  )
+}
 
 export default Header

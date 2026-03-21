@@ -14,7 +14,7 @@ const ProgressBar = ({
   <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
     <Typography
       sx={{
-        width: 48,
+        width: 72,
         fontSize: "0.75rem",
         fontFamily: "monospace",
         color: "onSurfaceVariant",

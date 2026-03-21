@@ -1,8 +1,7 @@
-import { Alert, Avatar, Box, Button, Snackbar, Typography } from '@mui/material';
+import { Alert, Avatar, Box, Snackbar, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useCallback, useState } from 'react';
 import { useAuth } from '../../AuthContext';
-import { useRouter } from '@tanstack/react-router';
 import Badge from '../../components/Badge';
 import DashboardLayout from '../../components/DashboardLayout';
 import RepoCard from '../../components/RepoCard';
@@ -14,12 +13,52 @@ import PeakHoursCard from './PeakHoursCard';
 import ProductiveDaysCard from './ProductiveDaysCard';
 import WeeklyGlanceCard from './WeeklyGlanceCard';
 
+const languageIcon = (language: string | null): string => {
+  switch (language?.toLowerCase()) {
+    case 'typescript':
+    case 'javascript':
+    case 'python':
+    case 'java':
+    case 'go':
+    case 'rust':
+    case 'c':
+    case 'c++':
+    case 'c#':
+    case 'ruby':
+    case 'swift':
+    case 'kotlin':
+    case 'php':
+      return 'code';
+    case 'html':
+    case 'css':
+    case 'scss':
+      return 'web';
+    case 'shell':
+    case 'bash':
+    case 'lua':
+      return 'terminal';
+    case 'sql':
+      return 'database';
+    default:
+      return 'folder_open';
+  }
+};
+
 const Dashboard: React.FC = () => {
   const theme = useTheme();
-  const { authUser, authLoading, authError, logout } = useAuth();
-  const router = useRouter();
-  const { streak, commitByHour, commitByDay, weeklyCommitData, weeklyPRData, weeklyQualityData, commitHistory, isDashboardLoading, error } =
-    useDashboardData();
+  const { authUser, authLoading, authError } = useAuth();
+  const {
+    streak,
+    commitByHour,
+    commitByDay,
+    weeklyCommitData,
+    weeklyPRData,
+    weeklyQualityData,
+    commitHistory,
+    activeRepos,
+    isDashboardLoading,
+    error,
+  } = useDashboardData();
   const isLoading = authLoading || isDashboardLoading;
 
   const [dismissed, setDismissed] = useState(false);
@@ -57,17 +96,6 @@ const Dashboard: React.FC = () => {
               Here's your engineering overview
             </Typography>
           </Box>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={async () => {
-              await logout();
-              router.navigate({ to: '/' });
-            }}
-            sx={{ ml: 'auto' }}
-          >
-            Logout
-          </Button>
         </Box>
         <SectionHeader
           title="Engineering Overview"
@@ -102,7 +130,11 @@ const Dashboard: React.FC = () => {
           <CommitStreakCard commitStreak={streak} commitHistory={commitHistory} />
           <PeakHoursCard commitByHour={commitByHour} />
           <ProductiveDaysCard commitByDay={commitByDay} />
-          <WeeklyGlanceCard weeklyCommitData={weeklyCommitData} weeklyPRData={weeklyPRData} weeklyQualityData={weeklyQualityData} />
+          <WeeklyGlanceCard
+            weeklyCommitData={weeklyCommitData}
+            weeklyPRData={weeklyPRData}
+            weeklyQualityData={weeklyQualityData}
+          />
         </Box>
       </Box>
 
@@ -135,30 +167,17 @@ const Dashboard: React.FC = () => {
             gap: 3,
           }}
         >
-          <RepoCard
-            icon="folder_open"
-            status="healthy"
-            name="commitly-web-client"
-            description="React + Tailwind UI Layer"
-            branch="main"
-            lastActivity="2m ago"
-          />
-          <RepoCard
-            icon="terminal"
-            status="maintenance"
-            name="api-gateway-service"
-            description="Rust-based high speed proxy"
-            branch="staging"
-            lastActivity="1h ago"
-          />
-          <RepoCard
-            icon="database"
-            status="failing"
-            name="data-lake-indexer"
-            description="Vector DB sync routines"
-            branch="feat/async-v2"
-            lastActivity="8m ago"
-          />
+          {activeRepos?.slice(0, 6).map((repo) => (
+            <RepoCard
+              key={repo.name}
+              icon={languageIcon(repo.language)}
+              status={repo.status}
+              name={repo.name}
+              description={repo.description}
+              branch={repo.branch}
+              lastActivity={repo.lastActivity}
+            />
+          ))}
         </Box>
       </Box>
     </DashboardLayout>

@@ -14,6 +14,7 @@ import {
   type WeeklyPRData,
   type WeeklyQualityData,
 } from './useCommitMetrics';
+import { useActiveRepos, type ActiveRepoData } from './useRepoMetrics';
 
 export interface DashboardData {
   streak: CommitStreakData | null;
@@ -23,6 +24,7 @@ export interface DashboardData {
   weeklyPRData: WeeklyPRData | null;
   weeklyQualityData: WeeklyQualityData | null;
   commitHistory: CommitHistoryData | null;
+  activeRepos: ActiveRepoData[] | null;
   isDashboardLoading: boolean;
   error: Error | null;
 }
@@ -35,6 +37,7 @@ export const useDashboardData = (): DashboardData => {
   const weeklyPRData = useWeeklyPRData();
   const weeklyQualityData = useWeeklyQualityData();
   const commitHistory = useCommitsHistory();
+  const activeRepos = useActiveRepos();
 
   return {
     streak: streak.data ?? null,
@@ -44,6 +47,7 @@ export const useDashboardData = (): DashboardData => {
     weeklyPRData: weeklyPRData.data ?? null,
     weeklyQualityData: weeklyQualityData.data ?? null,
     commitHistory: commitHistory.data ?? null,
+    activeRepos: activeRepos.data ?? null,
     isDashboardLoading: streak.loading,
     error: streak.error,
   };

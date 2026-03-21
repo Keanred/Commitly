@@ -163,18 +163,48 @@ metricsRouter.get('/quality/weekly', async (req: Request, res: Response) => {
 metricsRouter.get('/repos', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
   const repos = await getReposByUser(userId);
-  const repoHealth = repos.map(repo => {
-    const lastCommitDate = new Date(repo.repo_updated_at || new Date());
-    const daysSinceLastCommit = (new Date().getTime() - lastCommitDate.getTime()) / (1000 * 60 * 60 * 24);
-    let healthStatus = 'active';
-    if (daysSinceLastCommit > 90) {
-      healthStatus = 'abandoned';
-    } else if (daysSinceLastCommit > 30) {
-      healthStatus = 'neglected';
-    }
-    return { repoName: repo.name, healthStatus };
+  repos.sort((a, b) => {
+    const aTime = a.pushed_at ? new Date(a.pushed_at).getTime() : 0;
+    const bTime = b.pushed_at ? new Date(b.pushed_at).getTime() : 0;
+    return bTime - aTime;
   });
-  res.json(repoHealth);
+  const now = new Date();
+
+  const repoData = repos.map(repo => {
+    const lastPush = repo.pushed_at ? new Date(repo.pushed_at) : null;
+    const daysSinceActivity = lastPush
+      ? (now.getTime() - lastPush.getTime()) / (1000 * 60 * 60 * 24)
+      : Infinity;
+
+    let status: string = 'healthy';
+    if (daysSinceActivity > 90) {
+      status = 'failing';
+    } else if (daysSinceActivity > 30) {
+      status = 'maintenance';
+    }
+
+    let lastActivity = 'N/A';
+    if (lastPush) {
+      const diffMs = now.getTime() - lastPush.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+      if (diffMins < 60) lastActivity = `${diffMins}m ago`;
+      else if (diffHours < 24) lastActivity = `${diffHours}h ago`;
+      else lastActivity = `${diffDays}d ago`;
+    }
+
+    return {
+      name: repo.name,
+      description: repo.description || repo.language || 'No description',
+      language: repo.language,
+      branch: repo.default_branch || 'main',
+      status,
+      lastActivity,
+    };
+  });
+
+  res.json(repoData);
 });
 
 metricsRouter.get('/repos/languages', async (req: Request, res: Response) => {

@@ -19,7 +19,8 @@ export type WeeklyCommitData = {
     lastWeek: number;
     delta: number;
 }
-export type CommitHistoryData = number[]
+export type CommitHistoryCell = { date: string; count: number; intensity: number }
+export type CommitHistoryData = CommitHistoryCell[]
 
 export type WeeklyPRData = {
     thisWeek: number;
@@ -56,16 +57,37 @@ export const useCommitsByHour = () => {
     useEffect(() => {
         api<CommitsByHourData>('/api/v1/metrics/commits/by-hour')
         .then((response) => { 
-            // gather top 4 hours of most commits
-            const sorted = Object.entries(response.commitByHour).sort((a, b) => b[1] - a[1]);
-            const max = Math.max(sorted[0]?.[1] ?? 1, 1);
-            // format hours and normalize counts to percentage of max
-            const formattedByHourCommits = Object.fromEntries(sorted.slice(0, 4).map(([hour, count]) => {
-                const h = parseInt(hour);
-                const ampm = h >= 12 ? 'PM' : 'AM';
-                const formattedHour = h % 12 === 0 ? 12 : h % 12;
-                return [`${formattedHour} ${ampm}`, Math.round((count / max) * 100)];
-            }));
+            const hourCounts = response.commitByHour;
+
+            // Group into time blocks
+            const blocks = [
+                { label: 'Morning', range: [6, 12], icon: 'wb_sunny' },
+                { label: 'Afternoon', range: [12, 17], icon: 'wb_twilight' },
+                { label: 'Evening', range: [17, 22], icon: 'dark_mode' },
+                { label: 'Night', range: [22, 6], icon: 'bedtime' },
+            ];
+
+            const blockCounts: Record<string, number> = {};
+            for (const block of blocks) {
+                let count = 0;
+                if (block.range[0] < block.range[1]) {
+                    for (let h = block.range[0]; h < block.range[1]; h++) {
+                        count += hourCounts[h] ?? 0;
+                    }
+                } else {
+                    // Night wraps: 22-23 + 0-5
+                    for (let h = block.range[0]; h < 24; h++) count += hourCounts[h] ?? 0;
+                    for (let h = 0; h < block.range[1]; h++) count += hourCounts[h] ?? 0;
+                }
+                blockCounts[block.label] = count;
+            }
+
+            const max = Math.max(...Object.values(blockCounts), 1);
+            const formattedByHourCommits = Object.fromEntries(
+                blocks.map(b => [b.label, Math.round((blockCounts[b.label] / max) * 100)])
+            );
+            
+            setData({ commitByHour: formattedByHourCommits });
             
             setData({ commitByHour: formattedByHourCommits });
          })
@@ -112,17 +134,17 @@ export const useCommitsHistory = () => {
         .then((response) => {
             const days = 50;
             const today = new Date();
-            const counts: number[] = [];
+            const entries: { date: string; count: number }[] = [];
 
             for (let i = days - 1; i >= 0; i--) {
                 const date = new Date(today);
                 date.setDate(date.getDate() - i);
                 const key = date.toISOString().split('T')[0];
-                counts.push(response.commitHistory[key] ?? 0);
+                entries.push({ date: key, count: response.commitHistory[key] ?? 0 });
             }
 
-            const max = Math.max(...counts, 1);
-            setData(counts.map((c) => c / max));
+            const max = Math.max(...entries.map(e => e.count), 1);
+            setData(entries.map((e) => ({ ...e, intensity: e.count / max })));
         })
         .catch(setError)
         .finally(() => setLoading(false));
