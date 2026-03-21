@@ -1,7 +1,7 @@
 import type { User } from '../types/models';
-import { fetchUserRepos, fetchRepoCommits, fetchRepoLanguages, fetchRepoBranches } from './client';
-import { mapGitHubRepo, mapGitHubCommit } from './mappers';
-import { upsertRepo, insertCommits, upsertLanguage, upsertBranch, updateLastSyncedAt } from '../db/queries';
+import { fetchUserRepos, fetchRepoCommits, fetchRepoLanguages, fetchRepoBranches, fetchRepoPullRequests } from './client';
+import { mapGitHubRepo, mapGitHubCommit, mapGitHubPullRequest } from './mappers';
+import { upsertRepo, insertCommits, upsertLanguage, upsertBranch, updateLastSyncedAt, insertPullRequests } from '../db/queries';
 import cfg from '../config';
 
 export function needsSync(user: User): boolean {
@@ -52,6 +52,13 @@ export async function syncUserData(user: User, accessToken: string): Promise<voi
       }
     } catch (err) {
       console.error(`Failed to sync branches for ${repo.full_name}:`, err);
+    }
+
+    try {
+      const prs = await fetchRepoPullRequests(accessToken, owner, name, 'all', since);
+      await insertPullRequests(prs.map((pr: any) => mapGitHubPullRequest(user.id, repo.id, pr)));
+    } catch (err) {
+      console.error(`Failed to sync pull requests for ${repo.full_name}:`, err);
     }
   }
 

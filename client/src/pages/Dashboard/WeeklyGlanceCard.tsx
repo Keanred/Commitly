@@ -3,16 +3,29 @@ import { alpha } from '@mui/material/styles';
 import Badge from '../../components/Badge';
 import SectionHeader from '../../components/SectionHeader';
 import StatCard from '../../components/StatCard';
-import type { WeeklyCommitData } from '../../hooks/useCommitMetrics';
+import type { WeeklyCommitData, WeeklyPRData, WeeklyQualityData } from '../../hooks/useCommitMetrics';
 
-type WeeklyGlanceCardPorps = {
-  weeklyCommitData: WeeklyCommitData;
+type WeeklyGlanceCardProps = {
+  weeklyCommitData: WeeklyCommitData | null;
+  weeklyPRData: WeeklyPRData | null;
+  weeklyQualityData: WeeklyQualityData | null;
 };
 
-const WeeklyGlanceCard = (props: WeeklyGlanceCardPorps) => {
-  const velocity = (props.weeklyCommitData.delta / props.weeklyCommitData.lastWeek) * 100;
-  const weeklyCommits = props.weeklyCommitData.thisWeek;
-  const weeklyCommitTrend = (props.weeklyCommitData.lastWeek / props.weeklyCommitData.thisWeek) * 100;
+const WeeklyGlanceCard = (props: WeeklyGlanceCardProps) => {
+  const delta = props.weeklyCommitData?.delta ?? 0;
+  const lastWeek = props.weeklyCommitData?.lastWeek ?? 0;
+  const thisWeek = props.weeklyCommitData?.thisWeek ?? 0;
+  const velocity = lastWeek > 0 ? Math.round((delta / lastWeek) * 100) : 0;
+  const weeklyCommits = thisWeek;
+  const weeklyCommitTrend = lastWeek > 0 ? Math.round(((thisWeek - lastWeek) / lastWeek) * 100) : 0;
+
+  const prsMerged = props.weeklyPRData?.thisWeek ?? 0;
+  const prsLastWeek = props.weeklyPRData?.lastWeek ?? 0;
+  const prsTrend = prsLastWeek > 0 ? Math.round(((prsMerged - prsLastWeek) / prsLastWeek) * 100) : 0;
+
+  const qualityScore = props.weeklyQualityData?.thisWeek ?? 0;
+  const qualityLastWeek = props.weeklyQualityData?.lastWeek ?? 0;
+  const qualityTrend = qualityLastWeek > 0 ? Math.round(((qualityScore - qualityLastWeek) / qualityLastWeek) * 100) : 0;
   return (
     <Box
       sx={{
@@ -29,7 +42,7 @@ const WeeklyGlanceCard = (props: WeeklyGlanceCardPorps) => {
         title="Last Week at a Glance"
         trailing={
           <Badge bgcolor="onTertiaryFixedVariant" color="tertiary.main" pill sx={{ fontSize: '10px' }}>
-            +{velocity > 0 ? `+${velocity}% Velocity` : `-${velocity}% Velocity`}
+            {velocity >= 0 ? `+${velocity}% Velocity` : `${velocity}% Velocity`}
           </Badge>
         }
       />
@@ -40,17 +53,30 @@ const WeeklyGlanceCard = (props: WeeklyGlanceCardPorps) => {
           gap: 4,
         }}
       >
-        {weeklyCommitTrend > 0 ? (
-          <StatCard label="Commits" value={weeklyCommits} trend={{ value: `${weeklyCommitTrend}%`, direction: 'up' }} />
-        ) : (
-          <StatCard
-            label="Commits"
-            value={weeklyCommits}
-            trend={{ value: `-${weeklyCommitTrend}%`, direction: 'down' }}
-          />
-        )}
-        <StatCard label="PRs Merged" value={28} trend={{ value: '12%', direction: 'up' }} />
-        <StatCard label="Code Quality" value="94%" trend={{ value: '2.1%', direction: 'down' }} />
+        <StatCard
+          label="Commits"
+          value={weeklyCommits}
+          trend={{
+            value: `${Math.abs(weeklyCommitTrend)}%`,
+            direction: weeklyCommitTrend >= 0 ? 'up' : 'down',
+          }}
+        />
+        <StatCard
+          label="PRs Merged"
+          value={prsMerged}
+          trend={{
+            value: `${Math.abs(prsTrend)}%`,
+            direction: prsTrend >= 0 ? 'up' : 'down',
+          }}
+        />
+        <StatCard
+          label="Code Quality"
+          value={`${qualityScore}%`}
+          trend={{
+            value: `${Math.abs(qualityTrend)}%`,
+            direction: qualityTrend >= 0 ? 'up' : 'down',
+          }}
+        />
       </Box>
       <Box
         sx={{

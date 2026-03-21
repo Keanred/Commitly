@@ -88,6 +88,24 @@ export async function migrate() {
     )
   `;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS pull_requests (
+      id              SERIAL PRIMARY KEY,
+      user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      repo_id         INTEGER NOT NULL REFERENCES repos(id) ON DELETE CASCADE,
+      github_id       INTEGER NOT NULL,
+      number          INTEGER NOT NULL,
+      title           TEXT NOT NULL,
+      state           TEXT NOT NULL,
+      merged          BOOLEAN DEFAULT false,
+      merged_at       TIMESTAMPTZ,
+      created_at      TIMESTAMPTZ NOT NULL,
+      closed_at       TIMESTAMPTZ,
+      fetched_at      TIMESTAMPTZ DEFAULT now(),
+      UNIQUE(repo_id, github_id)
+    )
+  `;
+
   // Indexes for common query patterns
   await sql`CREATE INDEX IF NOT EXISTS idx_commits_user_date      ON commits(user_id, committed_at)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_commits_repo            ON commits(repo_id)`;
@@ -96,6 +114,8 @@ export async function migrate() {
   await sql`CREATE INDEX IF NOT EXISTS idx_branches_repo           ON branches(repo_id)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_languages_repo          ON languages(repo_id)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_weekly_summaries_user   ON weekly_summaries(user_id, week_start)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_pull_requests_user_date ON pull_requests(user_id, merged_at)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_pull_requests_repo      ON pull_requests(repo_id)`;
 
   console.log('Database migrations completed successfully');
 }

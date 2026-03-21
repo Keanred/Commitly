@@ -1,4 +1,4 @@
-import type { RepoInsert, CommitInsert } from '../types/models';
+import type { RepoInsert, CommitInsert, PullRequestInsert } from '../types/models';
 
 export function mapGitHubRepo(userId: number, repo: any): RepoInsert {
   return {
@@ -28,5 +28,20 @@ export function mapGitHubCommit(userId: number, repoId: number, commit: any): Co
     additions: commit.stats?.additions ?? 0,
     deletions: commit.stats?.deletions ?? 0,
     committed_at: commit.commit?.author?.date ? new Date(commit.commit.author.date) : new Date(),
+  };
+}
+
+export function mapGitHubPullRequest(userId: number, repoId: number, pr: any): PullRequestInsert {
+  return {
+    user_id: userId,
+    repo_id: repoId,
+    github_id: pr.id,
+    number: pr.number,
+    title: pr.title ?? '',
+    state: pr.state,
+    merged: !!pr.merged_at,
+    merged_at: pr.merged_at ? new Date(pr.merged_at) : null,
+    created_at: pr.created_at ? new Date(pr.created_at) : new Date(),
+    closed_at: pr.closed_at ? new Date(pr.closed_at) : null,
   };
 }

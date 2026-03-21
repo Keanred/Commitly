@@ -21,6 +21,18 @@ export type WeeklyCommitData = {
 }
 export type CommitHistoryData = number[]
 
+export type WeeklyPRData = {
+    thisWeek: number;
+    lastWeek: number;
+    delta: number;
+}
+
+export type WeeklyQualityData = {
+    thisWeek: number;
+    lastWeek: number;
+    delta: number;
+}
+
 export const useCommitStreak = () => {
     const [data, setData] = useState<CommitStreakData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -126,6 +138,36 @@ export const useWeeklyCommitData = () => {
 
     useEffect(() => {
         api<WeeklyCommitData>('/api/v1/metrics/commits/weekly')
+        .then((response) => setData({ thisWeek: response.thisWeek, lastWeek: response.lastWeek, delta: response.delta }))
+        .catch(setError)
+        .finally(() => setLoading(false));
+    }, []);
+
+    return { data, loading, error };
+}
+
+export const useWeeklyPRData = () => {
+    const [data, setData] = useState<WeeklyPRData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    useEffect(() => {
+        api<WeeklyPRData>('/api/v1/metrics/prs/weekly')
+        .then((response) => setData({ thisWeek: response.thisWeek, lastWeek: response.lastWeek, delta: response.delta }))
+        .catch(setError)
+        .finally(() => setLoading(false));
+    }, []);
+
+    return { data, loading, error };
+}
+
+export const useWeeklyQualityData = () => {
+    const [data, setData] = useState<WeeklyQualityData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    useEffect(() => {
+        api<WeeklyQualityData>('/api/v1/metrics/quality/weekly')
         .then((response) => setData({ thisWeek: response.thisWeek, lastWeek: response.lastWeek, delta: response.delta }))
         .catch(setError)
         .finally(() => setLoading(false));

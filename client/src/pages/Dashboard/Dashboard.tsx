@@ -16,7 +16,7 @@ import WeeklyGlanceCard from './WeeklyGlanceCard';
 const Dashboard: React.FC = () => {
   const theme = useTheme();
   const { authUser, authLoading, authError } = useAuth();
-  const { streak, commitByHour, commitByDay, weeklyCommitData, commitHistory, isDashboardLoading, error } =
+  const { streak, commitByHour, commitByDay, weeklyCommitData, weeklyPRData, weeklyQualityData, commitHistory, isDashboardLoading, error } =
     useDashboardData();
   const isLoading = authLoading || isDashboardLoading;
 
@@ -89,7 +89,7 @@ const Dashboard: React.FC = () => {
           <CommitStreakCard commitStreak={streak} commitHistory={commitHistory} />
           <PeakHoursCard commitByHour={commitByHour} />
           <ProductiveDaysCard commitByDay={commitByDay} />
-          <WeeklyGlanceCard weeklyCommitData={weeklyCommitData} />
+          <WeeklyGlanceCard weeklyCommitData={weeklyCommitData} weeklyPRData={weeklyPRData} weeklyQualityData={weeklyQualityData} />
         </Box>
       </Box>
 

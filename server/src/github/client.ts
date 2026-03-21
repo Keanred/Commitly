@@ -44,6 +44,21 @@ export async function fetchRepoLanguages(token: string, owner: string, repo: str
 export async function fetchRepoBranches(token: string, owner: string, repo: string) {
   return fetchGitHubPaginated(token, `/repos/${owner}/${repo}/branches`, { params: { per_page: 100 } });
 }
+
+/**
+ * Fetch pull requests for a given repo.
+ * @param token GitHub OAuth access token
+ * @param owner Repository owner
+ * @param repo Repository name
+ * @param state PR state filter ('all', 'open', 'closed')
+ * @param since (optional) ISO date to filter PRs updated after
+ * @returns Array of pull request objects
+ */
+export async function fetchRepoPullRequests(token: string, owner: string, repo: string, state: string = 'all', since?: string) {
+  const params: Record<string, string | number> = { per_page: 100, state };
+  if (since) params.since = since;
+  return fetchGitHubPaginated(token, `/repos/${owner}/${repo}/pulls`, { params });
+}
 /**
  * GitHub API client for authenticated requests, pagination, and rate limit handling.
  */

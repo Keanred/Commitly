@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { getCommitsByUser, getLanguagesByRepo, getBranchesByRepo, getReposByUser } from '../db/queries';
+import { getCommitsByUser, getLanguagesByRepo, getBranchesByRepo, getReposByUser, getPullRequestsByUser } from '../db/queries';
 import type { Branch } from '../types/models';
 
 const metricsRouter = Router();
@@ -99,6 +99,65 @@ metricsRouter.get('/commits/weekly', async (req: Request, res: Response) => {
 
   const delta = thisWeekCount - lastWeekCount;
   res.json({ thisWeek: thisWeekCount, lastWeek: lastWeekCount, delta });
+});
+
+metricsRouter.get('/prs/weekly', async (req: Request, res: Response) => {
+  const userId = req.session.userId as number;
+  const allPRs = await getPullRequestsByUser(userId);
+  const today = new Date();
+  const startOfWeek = new Date(today.getTime() - today.getDay() * 24 * 60 * 60 * 1000);
+  const startOfLastWeek = new Date(startOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  let thisWeekMerged = 0;
+  let lastWeekMerged = 0;
+
+  for (const pr of allPRs) {
+    if (!pr.merged || !pr.merged_at) continue;
+    const mergedDate = new Date(pr.merged_at);
+    if (mergedDate >= startOfWeek) {
+      thisWeekMerged++;
+    } else if (mergedDate >= startOfLastWeek && mergedDate < startOfWeek) {
+      lastWeekMerged++;
+    }
+  }
+
+  const delta = thisWeekMerged - lastWeekMerged;
+  res.json({ thisWeek: thisWeekMerged, lastWeek: lastWeekMerged, delta });
+});
+
+metricsRouter.get('/quality/weekly', async (req: Request, res: Response) => {
+  const userId = req.session.userId as number;
+  const allCommits = await getCommitsByUser(userId);
+  const today = new Date();
+  const startOfWeek = new Date(today.getTime() - today.getDay() * 24 * 60 * 60 * 1000);
+  const startOfLastWeek = new Date(startOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  const thisWeekCommits = allCommits.filter(c => new Date(c.committed_at) >= startOfWeek);
+  const lastWeekCommits = allCommits.filter(c => {
+    const d = new Date(c.committed_at);
+    return d >= startOfLastWeek && d < startOfWeek;
+  });
+
+  function calcQuality(commits: typeof allCommits): number {
+    if (commits.length === 0) return 0;
+
+    // 1. Commit size score (0-50): smaller avg changes = better discipline
+    const avgChanges = commits.reduce((sum, c) => sum + c.additions + c.deletions, 0) / commits.length;
+    // Under 50 lines avg = perfect 50, scales down to 0 at 500+ lines
+    const sizeScore = Math.max(0, Math.min(50, 50 - ((avgChanges - 50) / 450) * 50));
+
+    // 2. Consistency score (0-50): how many unique days had commits out of 7
+    const uniqueDays = new Set(commits.map(c => new Date(c.committed_at).toISOString().split('T')[0])).size;
+    const consistencyScore = Math.min(50, (uniqueDays / 7) * 50);
+
+    return Math.round(sizeScore + consistencyScore);
+  }
+
+  const thisWeekQuality = calcQuality(thisWeekCommits);
+  const lastWeekQuality = calcQuality(lastWeekCommits);
+  const delta = thisWeekQuality - lastWeekQuality;
+
+  res.json({ thisWeek: thisWeekQuality, lastWeek: lastWeekQuality, delta });
 });
 
 metricsRouter.get('/repos', async (req: Request, res: Response) => {

@@ -59,6 +59,21 @@ export interface Language {
   fetched_at: Date;
 }
 
+export interface PullRequest {
+  id: number;
+  user_id: number;
+  repo_id: number;
+  github_id: number;
+  number: number;
+  title: string;
+  state: string;
+  merged: boolean;
+  merged_at: Date | null;
+  created_at: Date;
+  closed_at: Date | null;
+  fetched_at: Date;
+}
+
 export interface WeeklySummary {
   id: number;
   user_id: number;
@@ -79,5 +94,7 @@ export type CommitInsert = Omit<Commit, 'id' | 'fetched_at'>;
 export type BranchInsert = Omit<Branch, 'id' | 'fetched_at'>;
 
 export type LanguageInsert = Omit<Language, 'id' | 'fetched_at'>;
+
+export type PullRequestInsert = Omit<PullRequest, 'id' | 'fetched_at'>;
 
 export type WeeklySummaryInsert = Omit<WeeklySummary, 'id' | 'generated_at'>;
