@@ -12,7 +12,7 @@ const DEFAULT_CELLS = [
   0.2, 1,
 ]
 
-const ContributionGrid = ({ cells = DEFAULT_CELLS }: ContributionGridProps) => (
+const ContributionGrid = ({ cells = DEFAULT_CELLS }: ContributionGridProps) => {(
   <Box sx={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
     {cells.map((intensity, i) => (
       <Box
@@ -26,6 +26,6 @@ const ContributionGrid = ({ cells = DEFAULT_CELLS }: ContributionGridProps) => (
       />
     ))}
   </Box>
-)
+)}
 
 export default ContributionGrid

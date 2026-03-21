@@ -16,9 +16,10 @@ export async function fetchUserRepos(token: string) {
  * @param author (optional) GitHub login to filter commits
  * @returns Array of commit objects
  */
-export async function fetchRepoCommits(token: string, owner: string, repo: string, author?: string) {
+export async function fetchRepoCommits(token: string, owner: string, repo: string, author?: string, since?: string) {
   const params: Record<string, string | number> = { per_page: 100 };
   if (author) params.author = author;
+  if (since) params.since = since;
   return fetchGitHubPaginated(token, `/repos/${owner}/${repo}/commits`, { params });
 }
 

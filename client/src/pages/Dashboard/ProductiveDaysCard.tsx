@@ -1,5 +1,17 @@
 import { Box, Typography } from "@mui/material"
 import { alpha, useTheme } from "@mui/material/styles"
+import type { CommitsByDayData } from "../../hooks/useCommitMetrics"
+
+// Outer pentagon vertices for each weekday (Mon–Fri)
+const OUTER_POINTS = [
+  [50, 5],   // MON – top
+  [95, 35],  // TUE – right
+  [80, 85],  // WED – bottom-right
+  [20, 85],  // THU – bottom-left
+  [5, 35],   // FRI – left
+] as const
+
+const CENTER = [50, 49] as const
 
 const LABELS = [
   { text: "MON", top: 0, left: "50%", transform: "translate(-50%, -16px)" },
@@ -9,8 +21,27 @@ const LABELS = [
   { text: "FRI", top: "25%", left: 0, transform: "translateX(-16px)" },
 ] as const
 
-const ProductiveDaysCard = () => {
+// Day keys in commitByDay (0 = Mon … 4 = Fri)
+const DAY_KEYS = [0, 1, 2, 3, 4]
+
+function buildDataPolygon(commitByDay: Record<number, number>): string {
+  return DAY_KEYS.map((key, i) => {
+    const intensity = commitByDay[key] ?? 0
+    const x = CENTER[0] + intensity * (OUTER_POINTS[i][0] - CENTER[0])
+    const y = CENTER[1] + intensity * (OUTER_POINTS[i][1] - CENTER[1])
+    return `${x},${y}`
+  }).join(" ")
+}
+
+type ProductiveDaysCardProps = {
+  commitByDay: CommitsByDayData | null
+}
+
+const ProductiveDaysCard = ({ commitByDay }: ProductiveDaysCardProps) => {
   const theme = useTheme()
+  const dataPoints = commitByDay
+    ? buildDataPolygon(commitByDay.commitByDay)
+    : undefined
 
   return (
     <Box
@@ -47,12 +78,14 @@ const ProductiveDaysCard = () => {
               strokeWidth="0.5"
               strokeDasharray="2,2"
             />
-            <polygon
-              points="50,10 90,40 70,80 40,70 10,30"
-              fill={alpha(theme.palette.primary.main, 0.2)}
-              stroke={theme.palette.primary.main}
-              strokeWidth="2"
-            />
+            {dataPoints && (
+              <polygon
+                points={dataPoints}
+                fill={alpha(theme.palette.primary.main, 0.2)}
+                stroke={theme.palette.primary.main}
+                strokeWidth="2"
+              />
+            )}
           </svg>
           {LABELS.map(({ text, transform, ...pos }) => (
             <Box

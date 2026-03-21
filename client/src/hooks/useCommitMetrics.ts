@@ -19,6 +19,7 @@ export type WeeklyCommitData = {
     lastWeek: number;
     delta: number;
 }
+export type CommitHistoryData = number[]
 
 export const useCommitStreak = () => {
     const [data, setData] = useState<CommitStreakData | null>(null);
@@ -90,7 +91,7 @@ export const useCommitsByDay = () => {
 // Server returns { commitHistory: { "2026-03-19": 5, ... } }
 // ContributionGrid expects number[] of 50 intensity values (0–1)
 export const useCommitsHistory = () => {
-    const [data, setData] = useState<number[] | null>(null);
+    const [data, setData] = useState<CommitHistoryData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
 

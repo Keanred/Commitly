@@ -1,13 +1,17 @@
 import { Box, Typography } from "@mui/material"
 import ContributionGrid from "../../components/ContributionGrid"
 import Icon from "../../components/Icon"
-import type { CommitStreakData } from "../../hooks/useCommitMetrics"
+import type { CommitHistoryData, CommitStreakData } from "../../hooks/useCommitMetrics"
 
 type CommitStreakCardProps = {
-  streak: CommitStreakData
+  commitStreak: CommitStreakData | null
+  commitHistory: CommitHistoryData | null
 }
-const CommitStreakCard = (props: CommitStreakCardProps) => (
-  <Box
+
+const CommitStreakCard = (props: CommitStreakCardProps) => {
+  const cells = props.commitHistory ?? undefined
+  return (
+    <Box
     sx={{
       gridColumn: { xs: "span 12", lg: "span 8" },
       bgcolor: "surfaceContainerLow",
@@ -42,13 +46,13 @@ const CommitStreakCard = (props: CommitStreakCardProps) => (
             lineHeight: 1,
           }}
         >
-          {props.streak.currentStreak}
+          {props.commitStreak ? props.commitStreak.currentStreak : 0}
         </Typography>
         <Typography sx={{ color: "onSurfaceVariant", fontWeight: 500 }}>
           Days active
         </Typography>
       </Box>
-      <ContributionGrid />
+      <ContributionGrid cells={cells} />
     </Box>
     <Box
       className="streak-icon"
@@ -64,6 +68,7 @@ const CommitStreakCard = (props: CommitStreakCardProps) => (
       <Icon name="local_fire_department" filled sx={{ fontSize: "9rem" }} />
     </Box>
   </Box>
-)
+    )
+}
 
 export default CommitStreakCard

@@ -15,11 +15,16 @@ export async function syncUserData(user: User, accessToken: string): Promise<voi
     repos.map((repo: any) => upsertRepo(mapGitHubRepo(user.id, repo)))
   );
 
+  // Limit commit sync to ~13 months to cover all dashboard timeframes (max: 52-week history)
+  const sinceDate = new Date();
+  sinceDate.setMonth(sinceDate.getMonth() - 13);
+  const since = sinceDate.toISOString();
+
   for (const repo of upsertedRepos) {
     const [owner, name] = [repo.full_name.split('/')[0], repo.name];
 
     try {
-      const commits = await fetchRepoCommits(accessToken, owner, name, user.login);
+      const commits = await fetchRepoCommits(accessToken, owner, name, user.login, since);
       await insertCommits(commits.map((c: any) => mapGitHubCommit(user.id, repo.id, c)));
     } catch (err) {
       console.error(`Failed to sync commits for ${repo.full_name}:`, err);
