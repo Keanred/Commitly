@@ -7,12 +7,13 @@
     "server"
   ],
   "scripts": {
-    "dev:server": "npm run dev --workspace=server",
-    "dev:client": "npm run dev --workspace=client",
-    "build": "npm run build --workspaces",
-    "test": "npm run test --workspaces",
-    "lint": "npm run lint --workspaces",
-    "format": "npm run format --workspaces"
+    "dev": "just dev",
+    "dev:down": "just dev-down",
+    "dev:clean": "just dev-clean",
+    "build": "just build",
+    "test": "just test",
+    "lint": "just lint",
+    "format": "just format"
   },
   "repository": {
     "type": "git",
@@ -20,7 +21,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "BSL-1.1",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "description": "",
   "devDependencies": {
     "eslint": "^10.0.3",

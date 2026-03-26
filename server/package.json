@@ -1,9 +1,10 @@
 {
   "name": "commitly-server",
   "version": "1.0.0",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "main": "dist/main.js",
   "scripts": {
-    "dev": "tsx src/main.ts",
+    "dev": "tsx watch src/main.ts",
     "build": "tsc",
     "start": "node dist/main.js",
     "db:migrate": "tsx src/db/run-migrate.ts",

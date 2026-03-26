@@ -46,6 +46,34 @@ export async function fetchRepoBranches(token: string, owner: string, repo: stri
 }
 
 /**
+ * Fetch commit details by SHA for a repository.
+ * @param token GitHub OAuth access token
+ * @param owner Repository owner
+ * @param repo Repository name
+ * @param sha Commit SHA
+ * @returns Commit object
+ */
+export async function fetchRepoCommitBySha(token: string, owner: string, repo: string, sha: string) {
+  return fetchGitHub(token, `/repos/${owner}/${repo}/commits/${sha}`);
+}
+
+/**
+ * Determine whether a repository has a README.
+ * Returns false on 404, rethrows other errors.
+ */
+export async function fetchRepoHasReadme(token: string, owner: string, repo: string): Promise<boolean> {
+  try {
+    await fetchGitHub(token, `/repos/${owner}/${repo}/readme`);
+    return true;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('404')) {
+      return false;
+    }
+    throw error;
+  }
+}
+
+/**
  * Fetch pull requests for a given repo.
  * @param token GitHub OAuth access token
  * @param owner Repository owner

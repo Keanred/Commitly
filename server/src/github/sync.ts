@@ -1,5 +1,5 @@
 import type { User } from '../types/models';
-import { fetchUserRepos, fetchRepoCommits, fetchRepoLanguages, fetchRepoBranches, fetchRepoPullRequests } from './client';
+import { fetchUserRepos, fetchRepoCommits, fetchRepoLanguages, fetchRepoBranches, fetchRepoPullRequests, fetchRepoCommitBySha, fetchRepoHasReadme } from './client';
 import { mapGitHubRepo, mapGitHubCommit, mapGitHubPullRequest } from './mappers';
 import { upsertRepo, insertCommits, upsertLanguage, upsertBranch, updateLastSyncedAt, insertPullRequests } from '../db/queries';
 import cfg from '../config';
@@ -12,7 +12,11 @@ export function needsSync(user: User): boolean {
 export async function syncUserData(user: User, accessToken: string): Promise<void> {
   const repos = await fetchUserRepos(accessToken);
   const upsertedRepos = await Promise.all(
-    repos.map((repo: any) => upsertRepo(mapGitHubRepo(user.id, repo)))
+    repos.map(async (repo: any) => {
+      const [owner, repoName] = repo.full_name.split('/');
+      const hasReadme = await fetchRepoHasReadme(accessToken, owner, repoName);
+      return upsertRepo(mapGitHubRepo(user.id, repo, hasReadme));
+    })
   );
 
   // Limit commit sync to ~13 months to cover all dashboard timeframes (max: 52-week history)
@@ -42,11 +46,17 @@ export async function syncUserData(user: User, accessToken: string): Promise<voi
     try {
       const branches = await fetchRepoBranches(accessToken, owner, name);
       for (const branch of branches) {
+        let lastCommitDate: Date | null = null;
+        if (branch.commit?.sha) {
+          const commit = await fetchRepoCommitBySha(accessToken, owner, name, branch.commit.sha);
+          const commitDate = commit?.commit?.author?.date ?? commit?.commit?.committer?.date ?? null;
+          lastCommitDate = commitDate ? new Date(commitDate) : null;
+        }
         await upsertBranch({
           repo_id: repo.id,
           name: branch.name,
           last_commit_sha: branch.commit?.sha ?? null,
-          last_commit_date: null,
+          last_commit_date: lastCommitDate,
           is_default: branch.name === repo.default_branch,
         });
       }

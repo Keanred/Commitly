@@ -18,3 +18,45 @@ Key Features:
 Behavioral patterns: peak coding hours, most productive days, commit streaks
 Repo health: active vs. neglected repositories, abandoned branches
 Weekly digest: an LLM-generated narrative summary of your recent activity
+
+## Local development setup
+
+### Prerequisites
+
+- Node.js and npm
+- Docker and Docker Compose
+
+### First-time setup
+
+1. Install dependencies from the repo root:
+
+	npm install
+
+2. Create your server env file:
+
+	cp server/.env.example server/.env
+
+3. Fill in the GitHub OAuth values in `server/.env`:
+
+	- `GITHUB_CLIENT_ID`
+	- `GITHUB_CLIENT_SECRET`
+	- `SESSION_SECRET`
+
+### Start full dev stack
+
+From the repo root, run:
+
+npm run dev
+
+This will:
+
+- Start local Postgres via Docker
+- Run database migrations
+- Start both the Vite client and TSX server in watch mode
+
+By default, Commitly maps Postgres to host port `5433` to avoid collisions with other local projects. You can override this with `COMMITLY_DB_PORT`.
+
+### Useful dev commands
+
+- Stop local Postgres: `npm run dev:down`
+- Kill local Vite/TSX processes: `npm run dev:clean`

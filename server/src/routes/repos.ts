@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
 import { getUserById, getReposByUser, upsertRepo, upsertLanguage, upsertBranch } from '../db/queries';
-import { fetchUserRepos, fetchRepoLanguages, fetchRepoBranches } from '../github/client';
+import { fetchUserRepos, fetchRepoLanguages, fetchRepoBranches, fetchRepoCommitBySha, fetchRepoHasReadme } from '../github/client';
 import { mapGitHubRepo } from '../github/mappers';
 
 const reposRouter = Router();
@@ -14,9 +14,11 @@ reposRouter.get('/fetch', async (req: Request, res: Response) => {
 	const user = await getUserById(userId);
 	if (!user) return res.status(404).json({ error: 'User not found' });
 	const repos = await fetchUserRepos(user.access_token);
-	const upserted = await Promise.all(
-		repos.map((repo: any) => upsertRepo(mapGitHubRepo(user.id, repo)))
-	);
+	const upserted = await Promise.all(repos.map(async (repo: any) => {
+		const [owner, repoName] = repo.full_name.split('/');
+		const hasReadme = await fetchRepoHasReadme(user.access_token, owner, repoName);
+		return upsertRepo(mapGitHubRepo(user.id, repo, hasReadme));
+	}));
 	res.json(upserted);
 });
 
@@ -51,13 +53,20 @@ reposRouter.get('/fetch-branches', async (req: Request, res: Response) => {
 	const repos = await getReposByUser(user.id);
 	let totalBranches = 0;
 	for (const repo of repos) {
-		const branches = await fetchRepoBranches(user.access_token, repo.full_name.split('/')[0], repo.name);
+		const [owner, repoName] = repo.full_name.split('/');
+		const branches = await fetchRepoBranches(user.access_token, owner, repoName);
 		for (const branch of branches) {
+			let lastCommitDate: Date | null = null;
+			if (branch.commit?.sha) {
+				const commit = await fetchRepoCommitBySha(user.access_token, owner, repoName, branch.commit.sha);
+				const commitDate = commit?.commit?.author?.date ?? commit?.commit?.committer?.date ?? null;
+				lastCommitDate = commitDate ? new Date(commitDate) : null;
+			}
 			await upsertBranch({
 				repo_id: repo.id,
 				name: branch.name,
 				last_commit_sha: branch.commit?.sha ?? null,
-				last_commit_date: null,
+				last_commit_date: lastCommitDate,
 				is_default: branch.name === repo.default_branch,
 			});
 			totalBranches++;

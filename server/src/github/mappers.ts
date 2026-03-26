@@ -1,6 +1,6 @@
 import type { RepoInsert, CommitInsert, PullRequestInsert } from '../types/models';
 
-export function mapGitHubRepo(userId: number, repo: any): RepoInsert {
+export function mapGitHubRepo(userId: number, repo: any, hasReadme: boolean): RepoInsert {
   return {
     user_id: userId,
     github_id: repo.id,
@@ -11,7 +11,7 @@ export function mapGitHubRepo(userId: number, repo: any): RepoInsert {
     stars: repo.stargazers_count,
     forks: repo.forks_count,
     open_issues: repo.open_issues_count,
-    has_readme: false,
+    has_readme: hasReadme,
     default_branch: repo.default_branch,
     pushed_at: repo.pushed_at ? new Date(repo.pushed_at) : null,
     repo_created_at: repo.created_at ? new Date(repo.created_at) : null,

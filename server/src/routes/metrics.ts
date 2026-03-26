@@ -4,6 +4,11 @@ import type { Branch } from '../types/models';
 
 const metricsRouter = Router();
 
+function clampScore(value: number): number {
+  if (Number.isNaN(value)) return 0;
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
 metricsRouter.get('/commits/streak', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
   const allCommits = await getCommitsByUser(userId);
@@ -248,6 +253,125 @@ metricsRouter.get('/repos/stale-branches', async (req: Request, res: Response) =
     result[repo.name] = staleBranches;
   }
   res.json(result);
+});
+
+metricsRouter.get('/global-integrity', async (req: Request, res: Response) => {
+  const userId = req.session.userId as number;
+  const repos = await getReposByUser(userId);
+  const now = new Date();
+
+  if (repos.length === 0) {
+    return res.json({
+      score: 0,
+      breakdown: {
+        activity: 0,
+        branchHygiene: 0,
+        quality: 0,
+        hygiene: 0,
+      },
+      counts: {
+        totalRepos: 0,
+        healthyRepos: 0,
+        maintenanceRepos: 0,
+        failingRepos: 0,
+        staleBranches: 0,
+        reposMissingReadme: 0,
+      },
+      summary: 'Sync repositories to compute global integrity.',
+    });
+  }
+
+  let healthyRepos = 0;
+  let maintenanceRepos = 0;
+  let failingRepos = 0;
+  let totalActivityScore = 0;
+
+  for (const repo of repos) {
+    const lastPush = repo.pushed_at ? new Date(repo.pushed_at) : null;
+    const daysSinceActivity = lastPush
+      ? (now.getTime() - lastPush.getTime()) / (1000 * 60 * 60 * 24)
+      : Infinity;
+
+    if (daysSinceActivity > 90) {
+      failingRepos++;
+      totalActivityScore += 20;
+    } else if (daysSinceActivity > 30) {
+      maintenanceRepos++;
+      totalActivityScore += 60;
+    } else {
+      healthyRepos++;
+      totalActivityScore += 100;
+    }
+  }
+
+  const activityScore = clampScore(totalActivityScore / repos.length);
+
+  let staleBranches = 0;
+  const staleThresholdDays = 90;
+  for (const repo of repos) {
+    const branches = await getBranchesByRepo(repo.id);
+    staleBranches += branches.filter((branch: Branch) => {
+      if (!branch.last_commit_date) return true;
+      const daysAgo = (now.getTime() - branch.last_commit_date.getTime()) / (1000 * 60 * 60 * 24);
+      return daysAgo > staleThresholdDays;
+    }).length;
+  }
+
+  const stalePenalty = Math.min(60, (8 * staleBranches) / Math.max(1, repos.length));
+  const branchHygieneScore = clampScore(100 - stalePenalty);
+
+  const allCommits = await getCommitsByUser(userId);
+  const startOfWeek = new Date(now.getTime() - now.getDay() * 24 * 60 * 60 * 1000);
+  const thisWeekCommits = allCommits.filter(commit => new Date(commit.committed_at) >= startOfWeek);
+  let qualityScore = 0;
+  if (thisWeekCommits.length > 0) {
+    const avgChanges = thisWeekCommits.reduce((sum, commit) => sum + commit.additions + commit.deletions, 0) / thisWeekCommits.length;
+    const sizeScore = Math.max(0, Math.min(50, 50 - ((avgChanges - 50) / 450) * 50));
+    const uniqueDays = new Set(thisWeekCommits.map(commit => new Date(commit.committed_at).toISOString().split('T')[0])).size;
+    const consistencyScore = Math.min(50, (uniqueDays / 7) * 50);
+    qualityScore = clampScore(sizeScore + consistencyScore);
+  }
+
+  const reposMissingReadme = repos.filter(repo => !repo.has_readme).length;
+  const readmeCoverage = ((repos.length - reposMissingReadme) / repos.length) * 100;
+  const avgOpenIssues = repos.reduce((sum, repo) => sum + repo.open_issues, 0) / repos.length;
+  const issueScore = Math.max(0, 100 - Math.min(100, avgOpenIssues * 5));
+  const hygieneScore = clampScore(readmeCoverage * 0.6 + issueScore * 0.4);
+
+  const score = clampScore(
+    activityScore * 0.45 +
+    branchHygieneScore * 0.3 +
+    qualityScore * 0.15 +
+    hygieneScore * 0.1
+  );
+
+  let summary = 'Your repositories are in excellent health overall.';
+  if (failingRepos > 0) {
+    summary = `${failingRepos} repos are stale and need attention.`;
+  } else if (maintenanceRepos > 0) {
+    summary = `${maintenanceRepos} repos are entering maintenance territory.`;
+  } else if (reposMissingReadme > 0) {
+    summary = `${reposMissingReadme} repos are missing a README.`;
+  }
+
+  res.json({
+    score,
+    breakdown: {
+      activity: activityScore,
+      branchHygiene: branchHygieneScore,
+      quality: qualityScore,
+      hygiene: hygieneScore,
+    },
+    counts: {
+      totalRepos: repos.length,
+      healthyRepos,
+      maintenanceRepos,
+      failingRepos,
+      staleBranches,
+      reposMissingReadme,
+    },
+    summary,
+  });
 });
 
 export default metricsRouter;
