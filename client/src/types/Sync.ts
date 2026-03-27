@@ -1,11 +1,11 @@
-export type FetchCommitsResponse = {
-    totalCommits: number;
-}
+import type {
+    FetchBranchesResponse as SharedFetchBranchesResponse,
+    FetchCommitsResponse as SharedFetchCommitsResponse,
+    FetchLanguagesResponse as SharedFetchLanguagesResponse,
+} from '@commitly/schemas';
 
-export type FetchLanguagesResponse = {
-    totalLanguages: number;
-}
+export type FetchCommitsResponse = SharedFetchCommitsResponse;
 
-export type FetchBranchesResponse = {
-    totalBranches: number;
-}
+export type FetchLanguagesResponse = SharedFetchLanguagesResponse;
+
+export type FetchBranchesResponse = SharedFetchBranchesResponse;

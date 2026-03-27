@@ -4,7 +4,8 @@
   "private": true,
   "workspaces": [
     "client",
-    "server"
+    "server",
+    "schemas"
   ],
   "scripts": {
     "dev": "just dev",

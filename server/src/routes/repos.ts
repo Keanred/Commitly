@@ -1,4 +1,5 @@
 import { Request, Response, Router } from 'express';
+import { fetchBranchesResponseSchema, fetchLanguagesResponseSchema } from '@commitly/schemas';
 import { getUserById, getReposByUser, upsertRepo, upsertLanguage, upsertBranch } from '../db/queries';
 import { fetchUserRepos, fetchRepoLanguages, fetchRepoBranches, fetchRepoCommitBySha, fetchRepoHasReadme } from '../github/client';
 import { mapGitHubRepo } from '../github/mappers';
@@ -39,7 +40,8 @@ reposRouter.get('/fetch-languages', async (req: Request, res: Response) => {
 			totalLanguages++;
 		}
 	}
-	res.json({ totalLanguages });
+	const response = fetchLanguagesResponseSchema.parse({ totalLanguages });
+	res.json(response);
 });
 
 /**
@@ -72,7 +74,8 @@ reposRouter.get('/fetch-branches', async (req: Request, res: Response) => {
 			totalBranches++;
 		}
 	}
-	res.json({ totalBranches });
+	const response = fetchBranchesResponseSchema.parse({ totalBranches });
+	res.json(response);
 });
 
 reposRouter.get('/active', async (req: Request, res: Response) => {

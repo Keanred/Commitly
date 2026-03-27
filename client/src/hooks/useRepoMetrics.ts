@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
+import {
+    activeReposResponseSchema,
+    globalIntegrityResponseSchema,
+    type ActiveRepo,
+    type ActiveRepoStatus,
+    type GlobalIntegrityResponse,
+} from '@commitly/schemas';
 import { api } from '../client';
 
-export type RepoStatus = 'healthy' | 'maintenance' | 'failing';
+export type RepoStatus = ActiveRepoStatus;
 
-export type ActiveRepoData = {
-    name: string;
-    description: string;
-    language: string | null;
-    branch: string;
-    status: RepoStatus;
-    lastActivity: string;
-}
+export type ActiveRepoData = ActiveRepo;
 
 export type RepoLanguagesData = {
     bytes: Record<string, number>;
@@ -24,24 +24,7 @@ export type StaleBranchEntry = {
 
 export type StaleBranchesData = Record<string, StaleBranchEntry[]>;
 
-export type GlobalIntegrityData = {
-    score: number;
-    breakdown: {
-        activity: number;
-        branchHygiene: number;
-        quality: number;
-        hygiene: number;
-    };
-    counts: {
-        totalRepos: number;
-        healthyRepos: number;
-        maintenanceRepos: number;
-        failingRepos: number;
-        staleBranches: number;
-        reposMissingReadme: number;
-    };
-    summary: string;
-}
+export type GlobalIntegrityData = GlobalIntegrityResponse;
 
 export const useActiveRepos = () => {
     const [data, setData] = useState<ActiveRepoData[] | null>(null);
@@ -50,7 +33,7 @@ export const useActiveRepos = () => {
 
     useEffect(() => {
         api<ActiveRepoData[]>('/api/v1/metrics/repos')
-        .then(setData)
+        .then((response) => setData(activeReposResponseSchema.parse(response)))
         .catch(setError)
         .finally(() => setLoading(false));
     }, []);
@@ -65,7 +48,7 @@ export const useGlobalIntegrity = () => {
 
     useEffect(() => {
         api<GlobalIntegrityData>('/api/v1/metrics/global-integrity')
-        .then(setData)
+        .then((response) => setData(globalIntegrityResponseSchema.parse(response)))
         .catch(setError)
         .finally(() => setLoading(false));
     }, []);

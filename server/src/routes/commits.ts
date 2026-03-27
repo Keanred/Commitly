@@ -1,4 +1,5 @@
 import { Request, Response, Router } from 'express';
+import { fetchCommitsResponseSchema } from '@commitly/schemas';
 import { getUserById, getReposByUser, insertCommits } from '../db/queries';
 import { fetchRepoCommits } from '../github/client';
 import { mapGitHubCommit } from '../github/mappers';
@@ -21,7 +22,8 @@ commitsRouter.get('/fetch', async (req: Request, res: Response) => {
 		await insertCommits(commitInserts);
 		totalCommits += commitInserts.length;
 	}
-	res.json({ totalCommits });
+	const response = fetchCommitsResponseSchema.parse({ totalCommits });
+	res.json(response);
 });
 
 export default commitsRouter;

@@ -1,4 +1,13 @@
 import { Router, Request, Response } from 'express';
+import {
+  activeReposResponseSchema,
+  commitHistoryResponseSchema,
+  commitStreakResponseSchema,
+  commitsByDayResponseSchema,
+  commitsByHourResponseSchema,
+  globalIntegrityResponseSchema,
+  weeklyDeltaResponseSchema,
+} from '@commitly/schemas';
 import { getCommitsByUser, getLanguagesByRepo, getBranchesByRepo, getReposByUser, getPullRequestsByUser } from '../db/queries';
 import type { Branch } from '../types/models';
 
@@ -34,7 +43,8 @@ metricsRouter.get('/commits/streak', async (req: Request, res: Response) => {
   }
   longestStreak = Math.max(longestStreak, currentStreak);
 
-  res.json({ currentStreak, longestStreak });
+  const response = commitStreakResponseSchema.parse({ currentStreak, longestStreak });
+  res.json(response);
 });
 
 metricsRouter.get('/commits/by-hour', async (req: Request, res: Response) => {
@@ -49,7 +59,8 @@ metricsRouter.get('/commits/by-hour', async (req: Request, res: Response) => {
     hourCounts[hour]++;
   }
 
-  res.json({ commitByHour: hourCounts });
+  const response = commitsByHourResponseSchema.parse({ commitByHour: hourCounts });
+  res.json(response);
 });
 
 metricsRouter.get('/commits/by-day', async (req: Request, res: Response) => {
@@ -63,7 +74,8 @@ metricsRouter.get('/commits/by-day', async (req: Request, res: Response) => {
     const day = new Date(commit.committed_at).getDay();
     dayCounts[day]++;
   }
-  res.json({ commitByDay: dayCounts });
+  const response = commitsByDayResponseSchema.parse({ commitByDay: dayCounts });
+  res.json(response);
 });
 
 metricsRouter.get('/commits/history', async (req: Request, res: Response) => {
@@ -80,7 +92,8 @@ metricsRouter.get('/commits/history', async (req: Request, res: Response) => {
     }
   }
 
-  res.json({ commitHistory: dateCounts });
+  const response = commitHistoryResponseSchema.parse({ commitHistory: dateCounts });
+  res.json(response);
 });
 
 metricsRouter.get('/commits/weekly', async (req: Request, res: Response) => {
@@ -103,7 +116,8 @@ metricsRouter.get('/commits/weekly', async (req: Request, res: Response) => {
   }
 
   const delta = thisWeekCount - lastWeekCount;
-  res.json({ thisWeek: thisWeekCount, lastWeek: lastWeekCount, delta });
+  const response = weeklyDeltaResponseSchema.parse({ thisWeek: thisWeekCount, lastWeek: lastWeekCount, delta });
+  res.json(response);
 });
 
 metricsRouter.get('/prs/weekly', async (req: Request, res: Response) => {
@@ -127,7 +141,8 @@ metricsRouter.get('/prs/weekly', async (req: Request, res: Response) => {
   }
 
   const delta = thisWeekMerged - lastWeekMerged;
-  res.json({ thisWeek: thisWeekMerged, lastWeek: lastWeekMerged, delta });
+  const response = weeklyDeltaResponseSchema.parse({ thisWeek: thisWeekMerged, lastWeek: lastWeekMerged, delta });
+  res.json(response);
 });
 
 metricsRouter.get('/quality/weekly', async (req: Request, res: Response) => {
@@ -162,7 +177,8 @@ metricsRouter.get('/quality/weekly', async (req: Request, res: Response) => {
   const lastWeekQuality = calcQuality(lastWeekCommits);
   const delta = thisWeekQuality - lastWeekQuality;
 
-  res.json({ thisWeek: thisWeekQuality, lastWeek: lastWeekQuality, delta });
+  const response = weeklyDeltaResponseSchema.parse({ thisWeek: thisWeekQuality, lastWeek: lastWeekQuality, delta });
+  res.json(response);
 });
 
 metricsRouter.get('/repos', async (req: Request, res: Response) => {
@@ -209,7 +225,8 @@ metricsRouter.get('/repos', async (req: Request, res: Response) => {
     };
   });
 
-  res.json(repoData);
+  const response = activeReposResponseSchema.parse(repoData);
+  res.json(response);
 });
 
 metricsRouter.get('/repos/languages', async (req: Request, res: Response) => {
@@ -261,7 +278,7 @@ metricsRouter.get('/global-integrity', async (req: Request, res: Response) => {
   const now = new Date();
 
   if (repos.length === 0) {
-    return res.json({
+    const response = globalIntegrityResponseSchema.parse({
       score: 0,
       breakdown: {
         activity: 0,
@@ -279,6 +296,7 @@ metricsRouter.get('/global-integrity', async (req: Request, res: Response) => {
       },
       summary: 'Sync repositories to compute global integrity.',
     });
+    return res.json(response);
   }
 
   let healthyRepos = 0;
@@ -354,7 +372,7 @@ metricsRouter.get('/global-integrity', async (req: Request, res: Response) => {
     summary = `${reposMissingReadme} repos are missing a README.`;
   }
 
-  res.json({
+  const response = globalIntegrityResponseSchema.parse({
     score,
     breakdown: {
       activity: activityScore,
@@ -372,6 +390,7 @@ metricsRouter.get('/global-integrity', async (req: Request, res: Response) => {
     },
     summary,
   });
+  res.json(response);
 });
 
 export default metricsRouter;
