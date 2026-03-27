@@ -27,14 +27,28 @@ export type WeeklyPRData = WeeklyDeltaResponse;
 
 export type WeeklyQualityData = WeeklyDeltaResponse;
 
+let cachedCommitStreak: CommitStreakData | null = null;
+let cachedCommitsByHour: CommitsByHourData | null = null;
+let cachedCommitsByDay: CommitsByDayData | null = null;
+let cachedCommitHistory: CommitHistoryData | null = null;
+let cachedWeeklyCommitData: WeeklyCommitData | null = null;
+let cachedWeeklyPRData: WeeklyPRData | null = null;
+let cachedWeeklyQualityData: WeeklyQualityData | null = null;
+
 export const useCommitStreak = () => {
-    const [data, setData] = useState<CommitStreakData | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [data, setData] = useState<CommitStreakData | null>(cachedCommitStreak);
+    const [loading, setLoading] = useState(!cachedCommitStreak);
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
+        if (cachedCommitStreak) return;
+
         api<CommitStreakResponse>('/api/v1/metrics/commits/streak')
-        .then((response) => setData(commitStreakResponseSchema.parse(response)))
+        .then((response) => {
+            const parsed = commitStreakResponseSchema.parse(response);
+            cachedCommitStreak = parsed;
+            setData(parsed);
+        })
         .catch(setError)
         .finally(() => setLoading(false));
     }, []);
@@ -43,11 +57,13 @@ export const useCommitStreak = () => {
 }
 
 export const useCommitsByHour = () => {
-    const [data, setData] = useState<CommitsByHourData | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [data, setData] = useState<CommitsByHourData | null>(cachedCommitsByHour);
+    const [loading, setLoading] = useState(!cachedCommitsByHour);
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
+        if (cachedCommitsByHour) return;
+
         api<CommitsByHourResponse>('/api/v1/metrics/commits/by-hour')
         .then((response) => { 
             const parsedResponse = commitsByHourResponseSchema.parse(response);
@@ -80,8 +96,10 @@ export const useCommitsByHour = () => {
             const formattedByHourCommits = Object.fromEntries(
                 blocks.map(b => [b.label, Math.round((blockCounts[b.label] / max) * 100)])
             );
-            
-            setData({ commitByHour: formattedByHourCommits });
+
+            const nextData = { commitByHour: formattedByHourCommits };
+            cachedCommitsByHour = nextData;
+            setData(nextData);
          })
         .catch(setError)
         .finally(() => setLoading(false));
@@ -91,11 +109,13 @@ export const useCommitsByHour = () => {
 }
 
 export const useCommitsByDay = () => {
-    const [data, setData] = useState<CommitsByDayData | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [data, setData] = useState<CommitsByDayData | null>(cachedCommitsByDay);
+    const [loading, setLoading] = useState(!cachedCommitsByDay);
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
+        if (cachedCommitsByDay) return;
+
         api<CommitsByDayResponse>('/api/v1/metrics/commits/by-day')
         .then((response) => {
             const parsedResponse = commitsByDayResponseSchema.parse(response);
@@ -104,7 +124,9 @@ export const useCommitsByDay = () => {
             const eachDayCommits = Object.fromEntries(Object.entries(parsedResponse.commitByDay).map(([day, count]) => {
                 return [day, count / max];
             }));
-            setData({ commitByDay: eachDayCommits });
+            const nextData = { commitByDay: eachDayCommits };
+            cachedCommitsByDay = nextData;
+            setData(nextData);
          },
         )
         .catch(setError)
@@ -118,11 +140,13 @@ export const useCommitsByDay = () => {
 // Server returns { commitHistory: { "2026-03-19": 5, ... } }
 // ContributionGrid expects a contiguous day-by-day series for the past year.
 export const useCommitsHistory = () => {
-    const [data, setData] = useState<CommitHistoryData | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [data, setData] = useState<CommitHistoryData | null>(cachedCommitHistory);
+    const [loading, setLoading] = useState(!cachedCommitHistory);
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
+        if (cachedCommitHistory) return;
+
         api<CommitHistoryResponse>('/api/v1/metrics/commits/history')
         .then((response) => {
             const parsedResponse = commitHistoryResponseSchema.parse(response);
@@ -138,7 +162,9 @@ export const useCommitsHistory = () => {
             }
 
             const max = Math.max(...entries.map(e => e.count), 1);
-            setData(entries.map((e) => ({ ...e, intensity: e.count / max })));
+            const nextData = entries.map((e) => ({ ...e, intensity: e.count / max }));
+            cachedCommitHistory = nextData;
+            setData(nextData);
         })
         .catch(setError)
         .finally(() => setLoading(false));
@@ -148,13 +174,19 @@ export const useCommitsHistory = () => {
 }
 
 export const useWeeklyCommitData = () => {
-    const [data, setData] = useState<WeeklyCommitData | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [data, setData] = useState<WeeklyCommitData | null>(cachedWeeklyCommitData);
+    const [loading, setLoading] = useState(!cachedWeeklyCommitData);
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
+        if (cachedWeeklyCommitData) return;
+
         api<WeeklyDeltaResponse>('/api/v1/metrics/commits/weekly')
-        .then((response) => setData(weeklyDeltaResponseSchema.parse(response)))
+        .then((response) => {
+            const parsed = weeklyDeltaResponseSchema.parse(response);
+            cachedWeeklyCommitData = parsed;
+            setData(parsed);
+        })
         .catch(setError)
         .finally(() => setLoading(false));
     }, []);
@@ -163,13 +195,19 @@ export const useWeeklyCommitData = () => {
 }
 
 export const useWeeklyPRData = () => {
-    const [data, setData] = useState<WeeklyPRData | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [data, setData] = useState<WeeklyPRData | null>(cachedWeeklyPRData);
+    const [loading, setLoading] = useState(!cachedWeeklyPRData);
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
+        if (cachedWeeklyPRData) return;
+
         api<WeeklyDeltaResponse>('/api/v1/metrics/prs/weekly')
-        .then((response) => setData(weeklyDeltaResponseSchema.parse(response)))
+        .then((response) => {
+            const parsed = weeklyDeltaResponseSchema.parse(response);
+            cachedWeeklyPRData = parsed;
+            setData(parsed);
+        })
         .catch(setError)
         .finally(() => setLoading(false));
     }, []);
@@ -178,13 +216,19 @@ export const useWeeklyPRData = () => {
 }
 
 export const useWeeklyQualityData = () => {
-    const [data, setData] = useState<WeeklyQualityData | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [data, setData] = useState<WeeklyQualityData | null>(cachedWeeklyQualityData);
+    const [loading, setLoading] = useState(!cachedWeeklyQualityData);
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
+        if (cachedWeeklyQualityData) return;
+
         api<WeeklyDeltaResponse>('/api/v1/metrics/quality/weekly')
-        .then((response) => setData(weeklyDeltaResponseSchema.parse(response)))
+        .then((response) => {
+            const parsed = weeklyDeltaResponseSchema.parse(response);
+            cachedWeeklyQualityData = parsed;
+            setData(parsed);
+        })
         .catch(setError)
         .finally(() => setLoading(false));
     }, []);

@@ -1,19 +1,55 @@
 import { alpha, Box, Typography } from "@mui/material"
 import StatusListItem from "../../components/StatusListItem"
 import Icon from "../../components/Icon"
+import type { ActiveRepoData, StaleBranchesData } from "../../hooks/useRepoMetrics"
 
-const neglectedRepos = [
-  { label: "legacy-auth-service", status: "214 Days Silent", pulse: true },
-  { label: "docs-internal-v1", status: "102 Days Silent", pulse: false },
-]
+interface NeglectedReposSectionProps {
+  neglectedRepos: ActiveRepoData[]
+  staleBranches: StaleBranchesData | null
+  loading?: boolean
+}
 
-const staleBranches = [
-  { name: "feature/old-ui-refactor", age: "1.2 yrs" },
-  { name: "fix/legacy-db-patch", age: "8 mos" },
-  { name: "experiment/wasm-test", age: "5 mos" },
-]
+const parseLastActivityDays = (lastActivity: string): number | null => {
+  const normalized = lastActivity.toLowerCase().trim()
+  const match = normalized.match(/(\d+)\s*([mhd])/)
+  if (!match) return null
+  const value = Number(match[1])
+  const unit = match[2]
+  if (unit === "m") return value / (60 * 24)
+  if (unit === "h") return value / 24
+  return value
+}
 
-const NeglectedReposSection = () => (
+const formatDaysSilent = (lastActivity: string): string => {
+  const days = parseLastActivityDays(lastActivity)
+  if (days === null) return "Stale"
+  if (days < 1) return "<1 Day Silent"
+  return `${Math.max(1, Math.round(days))} Days Silent`
+}
+
+const formatBranchAge = (lastCommitDate: string | null): string => {
+  if (!lastCommitDate) return "Unknown"
+  const diffMs = Date.now() - new Date(lastCommitDate).getTime()
+  const diffDays = Math.max(0, Math.floor(diffMs / 86400000))
+  if (diffDays >= 365) return `${(diffDays / 365).toFixed(1)} yrs`
+  if (diffDays >= 30) return `${Math.floor(diffDays / 30)} mos`
+  return `${diffDays} days`
+}
+
+const NeglectedReposSection = ({ neglectedRepos, staleBranches, loading = false }: NeglectedReposSectionProps) => {
+  const staleBranchRows = Object.entries(staleBranches ?? {})
+    .flatMap(([repoName, branches]) => branches.map((branch) => ({
+      name: `${repoName}:${branch.branch}`,
+      age: formatBranchAge(branch.lastCommitDate),
+    })))
+    .sort((a, b) => {
+      const aDays = Number(a.age.match(/(\d+)/)?.[1] ?? 0)
+      const bDays = Number(b.age.match(/(\d+)/)?.[1] ?? 0)
+      return bDays - aDays
+    })
+    .slice(0, 6)
+
+  return (
   <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
     {/* Neglected header */}
     <Typography
@@ -37,20 +73,34 @@ const NeglectedReposSection = () => (
         overflow: "hidden",
       }}
     >
-      {neglectedRepos.map((repo, i) => (
-        <Box
-          key={repo.label}
-          sx={(theme) => ({
-            bgcolor: alpha(theme.palette.error.main, 0.05),
-            ...(i < neglectedRepos.length - 1 && {
-              borderBottom: 1,
-              borderColor: alpha(theme.palette.outlineVariant, 0.1),
-            }),
-          })}
-        >
-          <StatusListItem {...repo} />
-        </Box>
-      ))}
+      {loading ? (
+        <Typography sx={{ p: 2, color: "onSurfaceVariant", fontSize: "0.875rem" }}>
+          Loading neglected repositories...
+        </Typography>
+      ) : neglectedRepos.length === 0 ? (
+        <Typography sx={{ p: 2, color: "onSurfaceVariant", fontSize: "0.875rem" }}>
+          No neglected repositories above the threshold.
+        </Typography>
+      ) : (
+        neglectedRepos.map((repo, i) => (
+          <Box
+            key={repo.name}
+            sx={(theme) => ({
+              bgcolor: alpha(theme.palette.error.main, 0.05),
+              ...(i < neglectedRepos.length - 1 && {
+                borderBottom: 1,
+                borderColor: alpha(theme.palette.outlineVariant, 0.1),
+              }),
+            })}
+          >
+            <StatusListItem
+              label={repo.name}
+              status={formatDaysSilent(repo.lastActivity)}
+              pulse={i === 0}
+            />
+          </Box>
+        ))
+      )}
     </Box>
 
     {/* Stale Branches */}
@@ -111,7 +161,7 @@ const NeglectedReposSection = () => (
             </Box>
           </Box>
           <Box component="tbody">
-            {staleBranches.map((branch) => (
+            {staleBranchRows.map((branch) => (
               <Box
                 component="tr"
                 key={branch.name}
@@ -158,11 +208,19 @@ const NeglectedReposSection = () => (
                 </Box>
               </Box>
             ))}
+            {!loading && staleBranchRows.length === 0 ? (
+              <Box component="tr">
+                <Box component="td" colSpan={3} sx={{ px: 2, py: 2, color: "onSurfaceVariant", fontSize: "0.75rem" }}>
+                  No stale branches found.
+                </Box>
+              </Box>
+            ) : null}
           </Box>
         </Box>
       </Box>
     </Box>
   </Box>
-)
+  )
+}
 
 export default NeglectedReposSection

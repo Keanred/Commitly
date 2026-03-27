@@ -65,7 +65,12 @@ const Sidebar = ({ navItems = [], bottomItems = [] }: SidebarProps) => (
         <Box
           key={item.label}
           component={item.href ? Link : "a"}
-          {...(item.href ? { to: item.href } : { href: "#" })}
+          {...(item.href
+            ? {
+                to: item.href,
+                preload: item.href === "/dashboard" ? ("intent" as const) : (false as const),
+              }
+            : { href: "#" })}
           sx={[
             {
               display: "flex",

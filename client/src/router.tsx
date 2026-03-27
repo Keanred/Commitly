@@ -5,19 +5,46 @@ import {
   createRoute,
   Outlet,
   redirect,
+  useRouterState,
 } from "@tanstack/react-router"
 import Login from "./pages/Login"
 import Dashboard from "./pages/Dashboard"
 import WeeklyDigest from "./pages/WeeklyDigest"
 import RepositoryHealth from "./pages/RepositoryHealth"
 import type { AuthContextType } from "./AuthContext"
+import { useAuth } from "./AuthContext"
+import DashboardLayout from "./components/DashboardLayout"
 
 interface MyRouterContext {
   auth: AuthContextType
 }
 
+const activeNavByPath: Record<string, string> = {
+  "/dashboard": "Dashboard",
+  "/weekly-digest": "Weekly Digest",
+  "/repo-health": "Repo Health",
+}
+
+const RootLayout = () => {
+  const auth = useAuth()
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+
+  if (pathname === "/") {
+    return <Outlet />
+  }
+
+  return (
+    <DashboardLayout
+      avatarUrl={auth.authUser?.avatar_url ?? undefined}
+      activeNav={activeNavByPath[pathname] ?? "Dashboard"}
+    >
+      <Outlet />
+    </DashboardLayout>
+  )
+}
+
 const rootRoute = createRootRouteWithContext<MyRouterContext>()({
-  component: Outlet,
+  component: RootLayout,
 })
 
 const loginRoute = createRoute({

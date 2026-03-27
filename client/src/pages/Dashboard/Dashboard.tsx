@@ -1,10 +1,8 @@
 import { Alert, Avatar, Box, Snackbar, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import { useCallback, useEffect, useState } from 'react';
-import { useRouter } from '@tanstack/react-router';
+import { useCallback, useState } from 'react';
 import { useAuth } from '../../AuthContext';
 import Badge from '../../components/Badge';
-import DashboardLayout from '../../components/DashboardLayout';
 import RepoCard from '../../components/RepoCard';
 import SectionHeader from '../../components/SectionHeader';
 import { useDashboardData } from '../../hooks/useDashboardData';
@@ -46,9 +44,8 @@ const languageIcon = (language: string | null): string => {
 };
 
 const Dashboard: React.FC = () => {
-  const router = useRouter();
   const theme = useTheme();
-  const { authUser, authLoading, authError, isAuthenticated } = useAuth();
+  const { authUser, authLoading, authError } = useAuth();
   const {
     streak,
     commitByHour,
@@ -72,23 +69,13 @@ const Dashboard: React.FC = () => {
 
   const handleClose = useCallback(() => setDismissed(true), []);
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.navigate({ to: '/' });
-    }
-  }, [authLoading, isAuthenticated, router]);
-
-  if (!authLoading && !isAuthenticated) {
-    return null;
-  }
-
   if (isLoading) {
     const status = authLoading ? 'Verifying authentication session' : dashboardLoadingStep;
     return <LoadingScreen progress={dashboardLoadProgress} status={status} />;
   }
 
   return (
-    <DashboardLayout avatarUrl={authUser?.avatar_url ?? undefined}>
+    <>
       <Snackbar
         open={toastOpen}
         autoHideDuration={6000}
@@ -195,7 +182,7 @@ const Dashboard: React.FC = () => {
           ))}
         </Box>
       </Box>
-    </DashboardLayout>
+    </>
   );
 };
 

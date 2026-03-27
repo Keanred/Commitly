@@ -3,6 +3,7 @@ import { fetchCommitsResponseSchema } from '@commitly/schemas';
 import { getUserById, getReposByUser, insertCommits } from '../db/queries';
 import { fetchRepoCommits } from '../github/client';
 import { mapGitHubCommit } from '../github/mappers';
+import { invalidateDashboardCacheForUser } from '../metrics/dashboardCache';
 
 const commitsRouter = Router();
 
@@ -22,6 +23,7 @@ commitsRouter.get('/fetch', async (req: Request, res: Response) => {
 		await insertCommits(commitInserts);
 		totalCommits += commitInserts.length;
 	}
+	invalidateDashboardCacheForUser(user.id);
 	const response = fetchCommitsResponseSchema.parse({ totalCommits });
 	res.json(response);
 });

@@ -38,6 +38,18 @@ export const activeRepoSchema = z.object({
 
 export const activeReposResponseSchema = z.array(activeRepoSchema)
 
+export const repoLanguagesResponseSchema = z.object({
+  bytes: z.record(z.string(), z.number().nonnegative()),
+  percentages: z.record(z.string(), z.number().nonnegative()),
+})
+
+export const staleBranchEntrySchema = z.object({
+  branch: z.string(),
+  lastCommitDate: z.string().datetime().nullable(),
+})
+
+export const staleBranchesResponseSchema = z.record(z.string(), z.array(staleBranchEntrySchema))
+
 export const globalIntegrityResponseSchema = z.object({
   score: z.number().int().min(0).max(100),
   breakdown: z.object({
@@ -55,6 +67,17 @@ export const globalIntegrityResponseSchema = z.object({
     reposMissingReadme: z.number().int().nonnegative(),
   }),
   summary: z.string(),
+})
+
+export const dashboardMetricsResponseSchema = z.object({
+  streak: commitStreakResponseSchema,
+  commitByHour: commitsByHourResponseSchema,
+  commitByDay: commitsByDayResponseSchema,
+  weeklyCommitData: weeklyDeltaResponseSchema,
+  weeklyPRData: weeklyDeltaResponseSchema,
+  weeklyQualityData: weeklyDeltaResponseSchema,
+  commitHistory: commitHistoryResponseSchema,
+  activeRepos: activeReposResponseSchema,
 })
 
 export const fetchCommitsResponseSchema = z.object({
@@ -77,7 +100,11 @@ export type WeeklyDeltaResponse = z.infer<typeof weeklyDeltaResponseSchema>
 export type ActiveRepoStatus = z.infer<typeof activeRepoStatusSchema>
 export type ActiveRepo = z.infer<typeof activeRepoSchema>
 export type ActiveReposResponse = z.infer<typeof activeReposResponseSchema>
+export type RepoLanguagesResponse = z.infer<typeof repoLanguagesResponseSchema>
+export type StaleBranchEntry = z.infer<typeof staleBranchEntrySchema>
+export type StaleBranchesResponse = z.infer<typeof staleBranchesResponseSchema>
 export type GlobalIntegrityResponse = z.infer<typeof globalIntegrityResponseSchema>
+export type DashboardMetricsResponse = z.infer<typeof dashboardMetricsResponseSchema>
 export type FetchCommitsResponse = z.infer<typeof fetchCommitsResponseSchema>
 export type FetchLanguagesResponse = z.infer<typeof fetchLanguagesResponseSchema>
 export type FetchBranchesResponse = z.infer<typeof fetchBranchesResponseSchema>

@@ -1,40 +1,50 @@
 import { Box, Typography } from "@mui/material"
 import HealthRepoCard from "../../components/HealthRepoCard"
+import type { ActiveRepoData } from "../../hooks/useRepoMetrics"
 
-const repos = [
-  {
-    icon: "code",
-    iconBgColor: "primaryContainer",
-    iconColor: "primary.main",
-    name: "commitly-core-engine",
-    language: "Rust",
-    languageColor: "tertiary.main",
-    lastCommit: "Last commit: 14 mins ago by @arch_linux_dev",
-    healthPercent: 92,
-  },
-  {
-    icon: "terminal",
-    iconBgColor: "surfaceContainerHigh",
-    iconColor: "onSurfaceVariant",
-    name: "analytics-dash-v3",
-    language: "TypeScript",
-    languageColor: "primary.main",
-    lastCommit: "Last commit: 3 hours ago by @sarah_codes",
-    healthPercent: 88,
-  },
-  {
-    icon: "api",
-    iconBgColor: "surfaceContainerHigh",
-    iconColor: "onSurfaceVariant",
-    name: "public-api-gateway",
-    language: "Go",
-    languageColor: "secondary.main",
-    lastCommit: "Last commit: 6 hours ago by @engineer_prime",
-    healthPercent: 96,
-  },
-]
+interface ActiveReposSectionProps {
+  repos: ActiveRepoData[]
+  loading?: boolean
+}
 
-const ActiveReposSection = () => (
+const languageIcon = (language: string | null): string => {
+  switch (language?.toLowerCase()) {
+    case "typescript":
+    case "javascript":
+    case "python":
+    case "java":
+    case "go":
+    case "rust":
+    case "c":
+    case "c++":
+    case "c#":
+    case "ruby":
+    case "swift":
+    case "kotlin":
+    case "php":
+      return "code"
+    case "html":
+    case "css":
+    case "scss":
+      return "web"
+    case "shell":
+    case "bash":
+    case "lua":
+      return "terminal"
+    case "sql":
+      return "database"
+    default:
+      return "folder_open"
+  }
+}
+
+const healthPercentByStatus: Record<ActiveRepoData["status"], number> = {
+  healthy: 92,
+  maintenance: 64,
+  failing: 28,
+}
+
+const ActiveReposSection = ({ repos, loading = false }: ActiveReposSectionProps) => (
   <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
     <Box
       sx={{
@@ -70,9 +80,26 @@ const ActiveReposSection = () => (
         View All
       </Typography>
     </Box>
-    {repos.map((repo) => (
-      <HealthRepoCard key={repo.name} {...repo} />
-    ))}
+    {loading ? (
+      <Typography sx={{ color: "onSurfaceVariant", fontSize: "0.875rem" }}>
+        Loading repository activity...
+      </Typography>
+    ) : repos.length === 0 ? (
+      <Typography sx={{ color: "onSurfaceVariant", fontSize: "0.875rem" }}>
+        No repositories matched the selected filters.
+      </Typography>
+    ) : (
+      repos.map((repo) => (
+        <HealthRepoCard
+          key={repo.name}
+          icon={languageIcon(repo.language)}
+          name={repo.name}
+          language={repo.language ?? "Unknown"}
+          lastCommit={`Last commit: ${repo.lastActivity}`}
+          healthPercent={healthPercentByStatus[repo.status]}
+        />
+      ))
+    )}
   </Box>
 )
 

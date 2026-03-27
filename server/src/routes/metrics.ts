@@ -5,10 +5,12 @@ import {
   commitStreakResponseSchema,
   commitsByDayResponseSchema,
   commitsByHourResponseSchema,
+  dashboardMetricsResponseSchema,
   globalIntegrityResponseSchema,
   weeklyDeltaResponseSchema,
 } from '@commitly/schemas';
 import { getCommitsByUser, getLanguagesByRepo, getBranchesByRepo, getReposByUser, getPullRequestsByUser } from '../db/queries';
+import { getCachedDashboardData, setCachedDashboardData } from '../metrics/dashboardCache';
 import type { Branch } from '../types/models';
 
 const metricsRouter = Router();
@@ -17,6 +19,195 @@ function clampScore(value: number): number {
   if (Number.isNaN(value)) return 0;
   return Math.max(0, Math.min(100, Math.round(value)));
 }
+
+function toIsoDateKey(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+
+function computeStreak(allCommits: Awaited<ReturnType<typeof getCommitsByUser>>) {
+  const commitDates = Array.from(new Set(allCommits.map(commit => toIsoDateKey(new Date(commit.committed_at))))).sort();
+  let currentStreak = 0;
+  let longestStreak = 0;
+  let previousDate: string | null = null;
+
+  for (const date of commitDates) {
+    if (previousDate) {
+      const diffDays = (new Date(date).getTime() - new Date(previousDate).getTime()) / (1000 * 60 * 60 * 24);
+      if (diffDays === 1) {
+        currentStreak++;
+      } else if (diffDays > 1) {
+        longestStreak = Math.max(longestStreak, currentStreak);
+        currentStreak = 1;
+      }
+    } else {
+      currentStreak = 1;
+    }
+    previousDate = date;
+  }
+
+  return commitStreakResponseSchema.parse({
+    currentStreak,
+    longestStreak: Math.max(longestStreak, currentStreak),
+  });
+}
+
+function computeCommitsByHour(allCommits: Awaited<ReturnType<typeof getCommitsByUser>>) {
+  const hourCounts: { [hour: number]: number } = {};
+  for (let i = 0; i < 24; i++) hourCounts[i] = 0;
+  for (const commit of allCommits) {
+    const hour = new Date(commit.committed_at).getHours();
+    hourCounts[hour]++;
+  }
+  return commitsByHourResponseSchema.parse({ commitByHour: hourCounts });
+}
+
+function computeCommitsByDay(allCommits: Awaited<ReturnType<typeof getCommitsByUser>>) {
+  const dayCounts: { [day: number]: number } = {};
+  for (let i = 0; i < 7; i++) dayCounts[i] = 0;
+  for (const commit of allCommits) {
+    const day = new Date(commit.committed_at).getDay();
+    dayCounts[day]++;
+  }
+  return commitsByDayResponseSchema.parse({ commitByDay: dayCounts });
+}
+
+function computeCommitHistory(allCommits: Awaited<ReturnType<typeof getCommitsByUser>>) {
+  const today = new Date();
+  const pastDate = new Date(today.getTime() - 52 * 7 * 24 * 60 * 60 * 1000);
+  const dateCounts: { [date: string]: number } = {};
+  for (const commit of allCommits) {
+    const commitDate = new Date(commit.committed_at);
+    if (commitDate >= pastDate) {
+      const dateKey = toIsoDateKey(commitDate);
+      dateCounts[dateKey] = (dateCounts[dateKey] || 0) + 1;
+    }
+  }
+  return commitHistoryResponseSchema.parse({ commitHistory: dateCounts });
+}
+
+function computeWeeklyCommitData(allCommits: Awaited<ReturnType<typeof getCommitsByUser>>) {
+  const today = new Date();
+  const startOfWeek = new Date(today.getTime() - today.getDay() * 24 * 60 * 60 * 1000);
+  const startOfLastWeek = new Date(startOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
+  let thisWeekCount = 0;
+  let lastWeekCount = 0;
+  for (const commit of allCommits) {
+    const commitDate = new Date(commit.committed_at);
+    if (commitDate >= startOfWeek) thisWeekCount++;
+    else if (commitDate >= startOfLastWeek && commitDate < startOfWeek) lastWeekCount++;
+  }
+  return weeklyDeltaResponseSchema.parse({ thisWeek: thisWeekCount, lastWeek: lastWeekCount, delta: thisWeekCount - lastWeekCount });
+}
+
+function computeWeeklyQualityData(allCommits: Awaited<ReturnType<typeof getCommitsByUser>>) {
+  const today = new Date();
+  const startOfWeek = new Date(today.getTime() - today.getDay() * 24 * 60 * 60 * 1000);
+  const startOfLastWeek = new Date(startOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const thisWeekCommits = allCommits.filter(c => new Date(c.committed_at) >= startOfWeek);
+  const lastWeekCommits = allCommits.filter(c => {
+    const d = new Date(c.committed_at);
+    return d >= startOfLastWeek && d < startOfWeek;
+  });
+
+  function calcQuality(commits: typeof allCommits): number {
+    if (commits.length === 0) return 0;
+    const avgChanges = commits.reduce((sum, c) => sum + c.additions + c.deletions, 0) / commits.length;
+    const sizeScore = Math.max(0, Math.min(50, 50 - ((avgChanges - 50) / 450) * 50));
+    const uniqueDays = new Set(commits.map(c => toIsoDateKey(new Date(c.committed_at)))).size;
+    const consistencyScore = Math.min(50, (uniqueDays / 7) * 50);
+    return Math.round(sizeScore + consistencyScore);
+  }
+
+  const thisWeekQuality = calcQuality(thisWeekCommits);
+  const lastWeekQuality = calcQuality(lastWeekCommits);
+  return weeklyDeltaResponseSchema.parse({ thisWeek: thisWeekQuality, lastWeek: lastWeekQuality, delta: thisWeekQuality - lastWeekQuality });
+}
+
+function computeWeeklyPRData(allPRs: Awaited<ReturnType<typeof getPullRequestsByUser>>) {
+  const today = new Date();
+  const startOfWeek = new Date(today.getTime() - today.getDay() * 24 * 60 * 60 * 1000);
+  const startOfLastWeek = new Date(startOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
+  let thisWeekMerged = 0;
+  let lastWeekMerged = 0;
+  for (const pr of allPRs) {
+    if (!pr.merged || !pr.merged_at) continue;
+    const mergedDate = new Date(pr.merged_at);
+    if (mergedDate >= startOfWeek) thisWeekMerged++;
+    else if (mergedDate >= startOfLastWeek && mergedDate < startOfWeek) lastWeekMerged++;
+  }
+  return weeklyDeltaResponseSchema.parse({ thisWeek: thisWeekMerged, lastWeek: lastWeekMerged, delta: thisWeekMerged - lastWeekMerged });
+}
+
+function computeActiveRepos(repos: Awaited<ReturnType<typeof getReposByUser>>) {
+  const sorted = [...repos].sort((a, b) => {
+    const aTime = a.pushed_at ? new Date(a.pushed_at).getTime() : 0;
+    const bTime = b.pushed_at ? new Date(b.pushed_at).getTime() : 0;
+    return bTime - aTime;
+  });
+
+  const now = new Date();
+  const repoData = sorted.map(repo => {
+    const lastPush = repo.pushed_at ? new Date(repo.pushed_at) : null;
+    const daysSinceActivity = lastPush
+      ? (now.getTime() - lastPush.getTime()) / (1000 * 60 * 60 * 24)
+      : Infinity;
+
+    let status: 'healthy' | 'maintenance' | 'failing' = 'healthy';
+    if (daysSinceActivity > 90) status = 'failing';
+    else if (daysSinceActivity > 30) status = 'maintenance';
+
+    let lastActivity = 'N/A';
+    if (lastPush) {
+      const diffMs = now.getTime() - lastPush.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+      if (diffMins < 60) lastActivity = `${diffMins}m ago`;
+      else if (diffHours < 24) lastActivity = `${diffHours}h ago`;
+      else lastActivity = `${diffDays}d ago`;
+    }
+
+    return {
+      name: repo.name,
+      description: repo.description || repo.language || 'No description',
+      language: repo.language,
+      branch: repo.default_branch || 'main',
+      status,
+      lastActivity,
+    };
+  });
+
+  return activeReposResponseSchema.parse(repoData);
+}
+
+metricsRouter.get('/dashboard', async (req: Request, res: Response) => {
+  const userId = req.session.userId as number;
+  const cached = getCachedDashboardData(userId);
+
+  if (cached) {
+    return res.json(cached);
+  }
+
+  const [allCommits, allPRs, repos] = await Promise.all([
+    getCommitsByUser(userId),
+    getPullRequestsByUser(userId),
+    getReposByUser(userId),
+  ]);
+
+  const data = dashboardMetricsResponseSchema.parse({
+    streak: computeStreak(allCommits),
+    commitByHour: computeCommitsByHour(allCommits),
+    commitByDay: computeCommitsByDay(allCommits),
+    weeklyCommitData: computeWeeklyCommitData(allCommits),
+    weeklyPRData: computeWeeklyPRData(allPRs),
+    weeklyQualityData: computeWeeklyQualityData(allCommits),
+    commitHistory: computeCommitHistory(allCommits),
+    activeRepos: computeActiveRepos(repos),
+  });
+
+  setCachedDashboardData(userId, data);
+  res.json(data);
+});
 
 metricsRouter.get('/commits/streak', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;

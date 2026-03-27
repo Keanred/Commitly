@@ -1,9 +1,5 @@
 import { Box } from "@mui/material"
-import { useEffect } from "react"
-import { useRouter } from "@tanstack/react-router"
-import DashboardLayout from "../../components/DashboardLayout"
 import SectionHeader from "../../components/SectionHeader"
-import { useAuth } from "../../AuthContext"
 import NarrativeSummaryCard from "./NarrativeSummaryCard"
 import ConsistencyScoreCard from "./ConsistencyScoreCard"
 import TechStackPulseCard from "./TechStackPulseCard"
@@ -11,21 +7,8 @@ import TopContributionsCard from "./TopContributionsCard"
 import PredictiveOutlookCard from "./PredictiveOutlookCard"
 
 const WeeklyDigest = () => {
-  const router = useRouter()
-  const { authUser, authLoading, isAuthenticated } = useAuth()
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.navigate({ to: "/" })
-    }
-  }, [authLoading, isAuthenticated, router])
-
-  if (!authLoading && !isAuthenticated) {
-    return null
-  }
-
   return (
-  <DashboardLayout activeNav="Weekly Digest" avatarUrl={authUser?.avatar_url ?? undefined}>
+  <>
     <Box component="section" sx={{ mb: 6 }}>
       <SectionHeader
         title="Weekly Narrative Digest"
@@ -56,7 +39,7 @@ const WeeklyDigest = () => {
       <TopContributionsCard />
       <PredictiveOutlookCard />
     </Box>
-  </DashboardLayout>
+  </>
   )
 }
 

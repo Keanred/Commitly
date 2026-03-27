@@ -1,5 +1,6 @@
-import { Box, Tooltip, Typography } from "@mui/material"
+import { Box, Typography } from "@mui/material"
 import { alpha } from "@mui/material/styles"
+import { memo, useMemo } from "react"
 import type { CommitHistoryCell } from "../../hooks/useCommitMetrics"
 
 interface ContributionGridProps {
@@ -33,6 +34,7 @@ const DAY_LABELS: Array<{ index: number; label: string }> = [
 ]
 
 type RenderCell = CommitHistoryCell & { isPadding: boolean }
+type MonthLabelPlacement = { label: string; column: number; lane: 0 | 1 }
 
 const CELL_SIZE = 11.5
 const CELL_GAP = 4
@@ -44,94 +46,98 @@ const ContributionGrid = ({ cells }: ContributionGridProps) => {
     return null
   }
 
-  const sorted = [...cells].sort((a, b) => a.date.localeCompare(b.date))
-  const cellMap = new Map(sorted.map((cell) => [cell.date, cell]))
+  const { weeks, monthLabelByColumn } = useMemo(() => {
+    const sorted = [...cells].sort((a, b) => a.date.localeCompare(b.date))
+    const cellMap = new Map(sorted.map((cell) => [cell.date, cell]))
+    const firstDate = toDate(sorted[0].date)
+    const lastDate = toDate(sorted[sorted.length - 1].date)
 
-  const firstDate = toDate(sorted[0].date)
-  const lastDate = toDate(sorted[sorted.length - 1].date)
-
-  let visibleStart = new Date(firstDate)
-  if (firstDate.getDate() !== 1) {
-    const nextMonthStart = new Date(firstDate.getFullYear(), firstDate.getMonth() + 1, 1)
-    if (nextMonthStart <= lastDate) {
-      visibleStart = nextMonthStart
-    }
-  }
-
-  const gridStart = addDays(visibleStart, -visibleStart.getDay())
-  const gridEnd = addDays(lastDate, 6 - lastDate.getDay())
-
-  const weeks: RenderCell[][] = []
-  let cursor = new Date(gridStart)
-
-  while (cursor <= gridEnd) {
-    const week: RenderCell[] = []
-    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-      const key = toKey(cursor)
-      const isPadding = cursor < visibleStart
-      const existing = cellMap.get(key)
-      week.push(
-        existing
-          ? { ...existing, isPadding }
-          : { date: key, count: 0, intensity: 0, isPadding },
-      )
-      cursor = addDays(cursor, 1)
-    }
-    weeks.push(week)
-  }
-
-  const monthLabels: Array<{ label: string; column: number }> = []
-  const seenColumns = new Set<number>()
-  let labelCursor = new Date(visibleStart)
-  while (labelCursor <= lastDate) {
-    if (labelCursor.getDate() === 1) {
-      const dayOffset = Math.floor((labelCursor.getTime() - gridStart.getTime()) / (1000 * 60 * 60 * 24))
-      const column = Math.floor(dayOffset / 7)
-      if (!seenColumns.has(column)) {
-        monthLabels.push({
-          label: labelCursor.toLocaleDateString("en-US", { month: "short" }),
-          column,
-        })
-        seenColumns.add(column)
+    let visibleStart = new Date(firstDate)
+    if (firstDate.getDate() !== 1) {
+      const nextMonthStart = new Date(firstDate.getFullYear(), firstDate.getMonth() + 1, 1)
+      if (nextMonthStart <= lastDate) {
+        visibleStart = nextMonthStart
       }
     }
-    labelCursor = addDays(labelCursor, 1)
-  }
 
-  if (monthLabels.length === 0 || monthLabels[0].column > 1) {
-    monthLabels.unshift({
-      label: visibleStart.toLocaleDateString("en-US", { month: "short" }),
-      column: 0,
-    })
-  }
+    const gridStart = addDays(visibleStart, -visibleStart.getDay())
+    const gridEnd = addDays(lastDate, 6 - lastDate.getDay())
 
-  const minColumnsPerLane = 2
-  const monthLabelLayout: Array<{ label: string; column: number; lane: 0 | 1 }> = []
-  let lastLane0Column = -Infinity
-  let lastLane1Column = -Infinity
+    const computedWeeks: RenderCell[][] = []
+    let cursor = new Date(gridStart)
 
-  for (const label of monthLabels) {
-    const canUseLane0 = label.column - lastLane0Column >= minColumnsPerLane
-    const canUseLane1 = label.column - lastLane1Column >= minColumnsPerLane
-
-    if (canUseLane0) {
-      monthLabelLayout.push({ ...label, lane: 0 })
-      lastLane0Column = label.column
-      continue
+    while (cursor <= gridEnd) {
+      const week: RenderCell[] = []
+      for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+        const key = toKey(cursor)
+        const isPadding = cursor < visibleStart
+        const existing = cellMap.get(key)
+        week.push(
+          existing
+            ? { ...existing, isPadding }
+            : { date: key, count: 0, intensity: 0, isPadding },
+        )
+        cursor = addDays(cursor, 1)
+      }
+      computedWeeks.push(week)
     }
 
-    if (canUseLane1) {
+    const monthLabels: Array<{ label: string; column: number }> = []
+    const seenColumns = new Set<number>()
+    let labelCursor = new Date(visibleStart)
+    while (labelCursor <= lastDate) {
+      if (labelCursor.getDate() === 1) {
+        const dayOffset = Math.floor((labelCursor.getTime() - gridStart.getTime()) / (1000 * 60 * 60 * 24))
+        const column = Math.floor(dayOffset / 7)
+        if (!seenColumns.has(column)) {
+          monthLabels.push({
+            label: labelCursor.toLocaleDateString("en-US", { month: "short" }),
+            column,
+          })
+          seenColumns.add(column)
+        }
+      }
+      labelCursor = addDays(labelCursor, 1)
+    }
+
+    if (monthLabels.length === 0 || monthLabels[0].column > 1) {
+      monthLabels.unshift({
+        label: visibleStart.toLocaleDateString("en-US", { month: "short" }),
+        column: 0,
+      })
+    }
+
+    const minColumnsPerLane = 2
+    const monthLabelLayout: MonthLabelPlacement[] = []
+    let lastLane0Column = -Infinity
+    let lastLane1Column = -Infinity
+
+    for (const label of monthLabels) {
+      const canUseLane0 = label.column - lastLane0Column >= minColumnsPerLane
+      const canUseLane1 = label.column - lastLane1Column >= minColumnsPerLane
+
+      if (canUseLane0) {
+        monthLabelLayout.push({ ...label, lane: 0 })
+        lastLane0Column = label.column
+        continue
+      }
+
+      if (canUseLane1) {
+        monthLabelLayout.push({ ...label, lane: 1 })
+        lastLane1Column = label.column
+        continue
+      }
+
       monthLabelLayout.push({ ...label, lane: 1 })
       lastLane1Column = label.column
-      continue
     }
 
-    // Extremely dense edge case: place on lane 1 instead of dropping the label.
-    monthLabelLayout.push({ ...label, lane: 1 })
-    lastLane1Column = label.column
-  }
+    return {
+      weeks: computedWeeks,
+      monthLabelByColumn: new Map(monthLabelLayout.map((label) => [label.column, label])),
+    }
+  }, [cells])
 
-  const monthLabelByColumn = new Map(monthLabelLayout.map((label) => [label.column, label]))
   const weekColumns = weeks.length
   const weekColumnsTemplate = {
     xs: `repeat(${weekColumns}, ${CELL_SIZE}px)`,
@@ -241,23 +247,18 @@ const ContributionGrid = ({ cells }: ContributionGridProps) => {
                       }}
                     />
                   ) : (
-                    <Tooltip
+                    <Box
                       key={`${weekIndex}-${dayIndex}`}
                       title={`${formatDate(cell.date)}: ${cell.count} commit${cell.count !== 1 ? "s" : ""}`}
-                      arrow
-                      placement="top"
-                    >
-                      <Box
-                        sx={{
-                          width: CELL_SIZE,
-                          height: CELL_SIZE,
-                          borderRadius: "2px",
-                          bgcolor: (theme) =>
-                            alpha(theme.palette.tertiary.main, Math.max(cell.intensity, 0.05)),
-                          cursor: "pointer",
-                        }}
-                      />
-                    </Tooltip>
+                      sx={{
+                        width: CELL_SIZE,
+                        height: CELL_SIZE,
+                        borderRadius: "2px",
+                        bgcolor: (theme) =>
+                          alpha(theme.palette.tertiary.main, Math.max(cell.intensity, 0.05)),
+                        cursor: "pointer",
+                      }}
+                    />
                   )
                 ))}
               </Box>
@@ -269,4 +270,4 @@ const ContributionGrid = ({ cells }: ContributionGridProps) => {
   )
 }
 
-export default ContributionGrid
+export default memo(ContributionGrid)

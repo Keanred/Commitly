@@ -3,6 +3,7 @@ import { fetchBranchesResponseSchema, fetchLanguagesResponseSchema } from '@comm
 import { getUserById, getReposByUser, upsertRepo, upsertLanguage, upsertBranch } from '../db/queries';
 import { fetchUserRepos, fetchRepoLanguages, fetchRepoBranches, fetchRepoCommitBySha, fetchRepoHasReadme } from '../github/client';
 import { mapGitHubRepo } from '../github/mappers';
+import { invalidateDashboardCacheForUser } from '../metrics/dashboardCache';
 
 const reposRouter = Router();
 
@@ -20,6 +21,7 @@ reposRouter.get('/fetch', async (req: Request, res: Response) => {
 		const hasReadme = await fetchRepoHasReadme(user.access_token, owner, repoName);
 		return upsertRepo(mapGitHubRepo(user.id, repo, hasReadme));
 	}));
+	invalidateDashboardCacheForUser(user.id);
 	res.json(upserted);
 });
 
@@ -40,6 +42,7 @@ reposRouter.get('/fetch-languages', async (req: Request, res: Response) => {
 			totalLanguages++;
 		}
 	}
+	invalidateDashboardCacheForUser(user.id);
 	const response = fetchLanguagesResponseSchema.parse({ totalLanguages });
 	res.json(response);
 });
@@ -74,6 +77,7 @@ reposRouter.get('/fetch-branches', async (req: Request, res: Response) => {
 			totalBranches++;
 		}
 	}
+	invalidateDashboardCacheForUser(user.id);
 	const response = fetchBranchesResponseSchema.parse({ totalBranches });
 	res.json(response);
 });

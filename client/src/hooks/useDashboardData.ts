@@ -1,20 +1,28 @@
 import {
-  useCommitsByDay,
-  useCommitsByHour,
-  useCommitsHistory,
-  useCommitStreak,
-  useWeeklyCommitData,
-  useWeeklyPRData,
-  useWeeklyQualityData,
-  type CommitHistoryData,
-  type CommitsByDayData,
-  type CommitsByHourData,
-  type CommitStreakData,
-  type WeeklyCommitData,
-  type WeeklyPRData,
-  type WeeklyQualityData,
-} from './useCommitMetrics';
-import { useActiveRepos, type ActiveRepoData } from './useRepoMetrics';
+  dashboardMetricsResponseSchema,
+  type ActiveReposResponse,
+  type CommitHistoryResponse,
+  type CommitStreakResponse,
+  type CommitsByDayResponse,
+  type CommitsByHourResponse,
+  type DashboardMetricsResponse,
+  type WeeklyDeltaResponse,
+} from '@commitly/schemas';
+import { useEffect, useState } from 'react';
+import { api } from '../client';
+
+export type CommitStreakData = CommitStreakResponse;
+export type CommitsByHourData = CommitsByHourResponse;
+export type CommitsByDayData = CommitsByDayResponse;
+export type WeeklyCommitData = WeeklyDeltaResponse;
+export type WeeklyPRData = WeeklyDeltaResponse;
+export type WeeklyQualityData = WeeklyDeltaResponse;
+export type ActiveRepoData = ActiveReposResponse[number];
+export type CommitHistoryCell = { date: string; count: number; intensity: number };
+export type CommitHistoryData = CommitHistoryCell[];
+
+let cachedDashboardPayload: DashboardMetricsResponse | null = null;
+let cachedDashboardUpdatedAt = 0;
 
 export interface DashboardData {
   streak: CommitStreakData | null;
@@ -28,77 +36,124 @@ export interface DashboardData {
   isDashboardLoading: boolean;
   dashboardLoadProgress: number;
   dashboardLoadingStep: string;
+  isRefreshing: boolean;
   error: Error | null;
 }
 
+const DASHBOARD_REFRESH_MS = 60_000;
+
+const buildCommitHistory = (response: CommitHistoryResponse): CommitHistoryData => {
+  const days = 52 * 7;
+  const today = new Date();
+  const entries: { date: string; count: number }[] = [];
+
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const key = date.toISOString().split('T')[0];
+    entries.push({ date: key, count: response.commitHistory[key] ?? 0 });
+  }
+
+  const max = Math.max(...entries.map(e => e.count), 1);
+  return entries.map((e) => ({ ...e, intensity: e.count / max }));
+};
+
+const normalizeCommitByHour = (response: CommitsByHourResponse): CommitsByHourData => {
+  const hourCounts = response.commitByHour;
+  const blocks = [
+    { label: 'Morning', range: [6, 12] },
+    { label: 'Afternoon', range: [12, 17] },
+    { label: 'Evening', range: [17, 22] },
+    { label: 'Night', range: [22, 6] },
+  ];
+
+  const blockCounts: Record<string, number> = {};
+  for (const block of blocks) {
+    let count = 0;
+    if (block.range[0] < block.range[1]) {
+      for (let h = block.range[0]; h < block.range[1]; h++) count += hourCounts[h] ?? 0;
+    } else {
+      for (let h = block.range[0]; h < 24; h++) count += hourCounts[h] ?? 0;
+      for (let h = 0; h < block.range[1]; h++) count += hourCounts[h] ?? 0;
+    }
+    blockCounts[block.label] = count;
+  }
+
+  const max = Math.max(...Object.values(blockCounts), 1);
+  return {
+    commitByHour: Object.fromEntries(
+      blocks.map(b => [b.label, Math.round((blockCounts[b.label] / max) * 100)]),
+    ),
+  };
+};
+
+const normalizeCommitByDay = (response: CommitsByDayResponse): CommitsByDayData => {
+  const max = Math.max(...Object.values(response.commitByDay), 1);
+  return {
+    commitByDay: Object.fromEntries(
+      Object.entries(response.commitByDay).map(([day, count]) => [day, count / max]),
+    ),
+  };
+};
+
 export const useDashboardData = (): DashboardData => {
-  const streak = useCommitStreak();
-  const commitByHour = useCommitsByHour();
-  const commitByDay = useCommitsByDay();
-  const weeklyCommitData = useWeeklyCommitData();
-  const weeklyPRData = useWeeklyPRData();
-  const weeklyQualityData = useWeeklyQualityData();
-  const commitHistory = useCommitsHistory();
-  const activeRepos = useActiveRepos();
+  const [payload, setPayload] = useState<DashboardMetricsResponse | null>(cachedDashboardPayload);
+  const [loading, setLoading] = useState(!cachedDashboardPayload);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  const isDashboardLoading =
-    streak.loading ||
-    commitByHour.loading ||
-    commitByDay.loading ||
-    weeklyCommitData.loading ||
-    weeklyPRData.loading ||
-    weeklyQualityData.loading ||
-    commitHistory.loading ||
-    activeRepos.loading;
+  useEffect(() => {
+    const shouldRefresh = Date.now() - cachedDashboardUpdatedAt > DASHBOARD_REFRESH_MS;
+    if (!shouldRefresh && cachedDashboardPayload) {
+      return;
+    }
 
-  const loadingStates = [
-    streak.loading,
-    commitByHour.loading,
-    commitByDay.loading,
-    weeklyCommitData.loading,
-    weeklyPRData.loading,
-    weeklyQualityData.loading,
-    commitHistory.loading,
-    activeRepos.loading,
-  ];
-  const completedCount = loadingStates.filter((loading) => !loading).length;
-  const dashboardLoadProgress = Math.round((completedCount / loadingStates.length) * 100);
+    if (cachedDashboardPayload) {
+      setIsRefreshing(true);
+    } else {
+      setLoading(true);
+    }
 
-  const loadingSteps: Array<{ loading: boolean; label: string }> = [
-    { loading: streak.loading, label: 'Calculating commit streaks' },
-    { loading: commitHistory.loading, label: 'Building commit history grid' },
-    { loading: commitByDay.loading, label: 'Analyzing daily productivity' },
-    { loading: commitByHour.loading, label: 'Analyzing hourly patterns' },
-    { loading: weeklyCommitData.loading, label: 'Aggregating weekly commits' },
-    { loading: weeklyPRData.loading, label: 'Aggregating pull request stats' },
-    { loading: weeklyQualityData.loading, label: 'Scoring engineering quality' },
-    { loading: activeRepos.loading, label: 'Loading active repositories' },
-  ];
-  const activeStep = loadingSteps.find((step) => step.loading);
-  const dashboardLoadingStep = activeStep?.label ?? 'Finalizing dashboard';
+    api<DashboardMetricsResponse>('/api/v1/metrics/dashboard')
+      .then((response) => {
+        const parsed = dashboardMetricsResponseSchema.parse(response);
+        cachedDashboardPayload = parsed;
+        cachedDashboardUpdatedAt = Date.now();
+        setPayload(parsed);
+      })
+      .catch(setError)
+      .finally(() => {
+        setLoading(false);
+        setIsRefreshing(false);
+      });
+  }, []);
 
-  const error =
-    streak.error ||
-    commitByHour.error ||
-    commitByDay.error ||
-    weeklyCommitData.error ||
-    weeklyPRData.error ||
-    weeklyQualityData.error ||
-    commitHistory.error ||
-    activeRepos.error;
+  const streak = payload?.streak ?? null;
+  const commitByHour = payload ? normalizeCommitByHour(payload.commitByHour) : null;
+  const commitByDay = payload ? normalizeCommitByDay(payload.commitByDay) : null;
+  const weeklyCommitData = payload?.weeklyCommitData ?? null;
+  const weeklyPRData = payload?.weeklyPRData ?? null;
+  const weeklyQualityData = payload?.weeklyQualityData ?? null;
+  const commitHistory = payload ? buildCommitHistory(payload.commitHistory) : null;
+  const activeRepos = payload?.activeRepos ?? null;
+
+  const isDashboardLoading = loading && !payload;
+  const dashboardLoadProgress = payload ? 100 : (loading ? 65 : 100);
+  const dashboardLoadingStep = payload ? 'Finalizing dashboard' : 'Loading dashboard snapshot';
 
   return {
-    streak: streak.data ?? null,
-    commitByHour: commitByHour.data ?? null,
-    commitByDay: commitByDay.data ?? null,
-    weeklyCommitData: weeklyCommitData.data ?? null,
-    weeklyPRData: weeklyPRData.data ?? null,
-    weeklyQualityData: weeklyQualityData.data ?? null,
-    commitHistory: commitHistory.data ?? null,
-    activeRepos: activeRepos.data ?? null,
+    streak,
+    commitByHour,
+    commitByDay,
+    weeklyCommitData,
+    weeklyPRData,
+    weeklyQualityData,
+    commitHistory,
+    activeRepos,
     isDashboardLoading,
     dashboardLoadProgress,
     dashboardLoadingStep,
+    isRefreshing,
     error,
   };
 };

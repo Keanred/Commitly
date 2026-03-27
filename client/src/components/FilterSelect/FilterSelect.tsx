@@ -4,9 +4,11 @@ import type { ReactNode } from "react"
 interface FilterSelectProps {
   label: string
   children: ReactNode
+  value?: string
+  onChange?: (value: string) => void
 }
 
-const FilterSelect = ({ label, children }: FilterSelectProps) => (
+const FilterSelect = ({ label, children, value, onChange }: FilterSelectProps) => (
   <Box
     sx={{
       bgcolor: "surfaceContainer",
@@ -32,6 +34,8 @@ const FilterSelect = ({ label, children }: FilterSelectProps) => (
     </Typography>
     <Box
       component="select"
+      value={value}
+      onChange={onChange ? (event) => onChange(event.target.value) : undefined}
       sx={{
         bgcolor: "transparent",
         border: "none",
