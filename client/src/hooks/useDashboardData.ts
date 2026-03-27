@@ -26,6 +26,8 @@ export interface DashboardData {
   commitHistory: CommitHistoryData | null;
   activeRepos: ActiveRepoData[] | null;
   isDashboardLoading: boolean;
+  dashboardLoadProgress: number;
+  dashboardLoadingStep: string;
   error: Error | null;
 }
 
@@ -39,6 +41,52 @@ export const useDashboardData = (): DashboardData => {
   const commitHistory = useCommitsHistory();
   const activeRepos = useActiveRepos();
 
+  const isDashboardLoading =
+    streak.loading ||
+    commitByHour.loading ||
+    commitByDay.loading ||
+    weeklyCommitData.loading ||
+    weeklyPRData.loading ||
+    weeklyQualityData.loading ||
+    commitHistory.loading ||
+    activeRepos.loading;
+
+  const loadingStates = [
+    streak.loading,
+    commitByHour.loading,
+    commitByDay.loading,
+    weeklyCommitData.loading,
+    weeklyPRData.loading,
+    weeklyQualityData.loading,
+    commitHistory.loading,
+    activeRepos.loading,
+  ];
+  const completedCount = loadingStates.filter((loading) => !loading).length;
+  const dashboardLoadProgress = Math.round((completedCount / loadingStates.length) * 100);
+
+  const loadingSteps: Array<{ loading: boolean; label: string }> = [
+    { loading: streak.loading, label: 'Calculating commit streaks' },
+    { loading: commitHistory.loading, label: 'Building commit history grid' },
+    { loading: commitByDay.loading, label: 'Analyzing daily productivity' },
+    { loading: commitByHour.loading, label: 'Analyzing hourly patterns' },
+    { loading: weeklyCommitData.loading, label: 'Aggregating weekly commits' },
+    { loading: weeklyPRData.loading, label: 'Aggregating pull request stats' },
+    { loading: weeklyQualityData.loading, label: 'Scoring engineering quality' },
+    { loading: activeRepos.loading, label: 'Loading active repositories' },
+  ];
+  const activeStep = loadingSteps.find((step) => step.loading);
+  const dashboardLoadingStep = activeStep?.label ?? 'Finalizing dashboard';
+
+  const error =
+    streak.error ||
+    commitByHour.error ||
+    commitByDay.error ||
+    weeklyCommitData.error ||
+    weeklyPRData.error ||
+    weeklyQualityData.error ||
+    commitHistory.error ||
+    activeRepos.error;
+
   return {
     streak: streak.data ?? null,
     commitByHour: commitByHour.data ?? null,
@@ -48,7 +96,9 @@ export const useDashboardData = (): DashboardData => {
     weeklyQualityData: weeklyQualityData.data ?? null,
     commitHistory: commitHistory.data ?? null,
     activeRepos: activeRepos.data ?? null,
-    isDashboardLoading: streak.loading,
-    error: streak.error,
+    isDashboardLoading,
+    dashboardLoadProgress,
+    dashboardLoadingStep,
+    error,
   };
 };

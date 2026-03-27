@@ -75,4 +75,12 @@ reposRouter.get('/fetch-branches', async (req: Request, res: Response) => {
 	res.json({ totalBranches });
 });
 
+reposRouter.get('/active', async (req: Request, res: Response) => {
+  // 1. Get user repos
+  // 2. Apply freshness filter (< 30 days)
+  // 3. If composite: compute activity scores (commits, PRs, branch hygiene)
+  // 4. Filter to top N
+  // 5. Return with activityScore, status, etc.
+})
+
 export default reposRouter;

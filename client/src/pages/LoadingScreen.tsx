@@ -6,7 +6,12 @@ import LoadingLogo from "../components/Loading/LoadingLogo";
 import LoadingProgressBar from "../components/Loading/LoadingProgressBar";
 import LoadingMessage from "../components/Loading/LoadingMessage";
 
-const LoadingScreen = () => {
+interface LoadingScreenProps {
+  progress?: number;
+  status?: string;
+}
+
+const LoadingScreen = ({ progress = 0, status = 'Preparing dashboard data' }: LoadingScreenProps) => {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
@@ -25,8 +30,8 @@ const LoadingScreen = () => {
       <MeshBackground>
         <Box sx={{ width: '100%', maxWidth: 480, mx: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 8 }}>
           <LoadingLogo />
-          <LoadingProgressBar />
-          <LoadingMessage />
+          <LoadingProgressBar progress={progress} />
+          <LoadingMessage progress={progress} status={status} />
         </Box>
       </MeshBackground>
       {/* Footer */}

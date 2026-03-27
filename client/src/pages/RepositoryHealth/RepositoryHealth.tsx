@@ -1,4 +1,6 @@
 import { alpha, Box } from "@mui/material"
+import { useEffect } from "react"
+import { useRouter } from "@tanstack/react-router"
 import DashboardLayout from "../../components/DashboardLayout"
 import SectionHeader from "../../components/SectionHeader"
 import { useAuth } from "../../AuthContext"
@@ -9,7 +11,19 @@ import ActiveReposSection from "./ActiveReposSection"
 import NeglectedReposSection from "./NeglectedReposSection"
 
 const RepositoryHealth = () => {
-  const { authUser } = useAuth()
+  const router = useRouter()
+  const { authUser, authLoading, isAuthenticated } = useAuth()
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.navigate({ to: "/" })
+    }
+  }, [authLoading, isAuthenticated, router])
+
+  if (!authLoading && !isAuthenticated) {
+    return null
+  }
+
   return (
   <DashboardLayout activeNav="Repo Health" avatarUrl={authUser?.avatar_url ?? undefined}>
     <Box sx={{ maxWidth: 1200, mx: "auto" }}>

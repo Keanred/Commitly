@@ -1,4 +1,6 @@
 import { Box } from "@mui/material"
+import { useEffect } from "react"
+import { useRouter } from "@tanstack/react-router"
 import DashboardLayout from "../../components/DashboardLayout"
 import SectionHeader from "../../components/SectionHeader"
 import { useAuth } from "../../AuthContext"
@@ -9,7 +11,19 @@ import TopContributionsCard from "./TopContributionsCard"
 import PredictiveOutlookCard from "./PredictiveOutlookCard"
 
 const WeeklyDigest = () => {
-  const { authUser } = useAuth()
+  const router = useRouter()
+  const { authUser, authLoading, isAuthenticated } = useAuth()
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.navigate({ to: "/" })
+    }
+  }, [authLoading, isAuthenticated, router])
+
+  if (!authLoading && !isAuthenticated) {
+    return null
+  }
+
   return (
   <DashboardLayout activeNav="Weekly Digest" avatarUrl={authUser?.avatar_url ?? undefined}>
     <Box component="section" sx={{ mb: 6 }}>

@@ -27,14 +27,14 @@ const CommitStreakCard = (props: CommitStreakCardProps) => {
         variant="overline"
         sx={{ color: "onSurfaceVariant", mb: 2, display: "block" }}
       >
-        Current Commit Streak
+        Commit Activity
       </Typography>
       <Box
         sx={{
           display: "flex",
           alignItems: "baseline",
           gap: 1,
-          mb: 3,
+          mb: 1,
         }}
       >
         <Typography
@@ -52,6 +52,9 @@ const CommitStreakCard = (props: CommitStreakCardProps) => {
           Days active
         </Typography>
       </Box>
+      <Typography sx={{ color: "onSurfaceVariant", mb: 2, fontSize: "0.875rem" }}>
+        Longest streak: {props.commitStreak ? props.commitStreak.longestStreak : 0} days • Last 52 weeks
+      </Typography>
       <ContributionGrid cells={cells} />
     </Box>
     <Box

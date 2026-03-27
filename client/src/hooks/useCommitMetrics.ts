@@ -123,7 +123,7 @@ export const useCommitsByDay = () => {
 
 // Example: transform server data into component-ready shape
 // Server returns { commitHistory: { "2026-03-19": 5, ... } }
-// ContributionGrid expects number[] of 50 intensity values (0–1)
+// ContributionGrid expects a contiguous day-by-day series for the past year.
 export const useCommitsHistory = () => {
     const [data, setData] = useState<CommitHistoryData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -132,7 +132,7 @@ export const useCommitsHistory = () => {
     useEffect(() => {
         api<{ commitHistory: Record<string, number> }>('/api/v1/metrics/commits/history')
         .then((response) => {
-            const days = 50;
+            const days = 52 * 7;
             const today = new Date();
             const entries: { date: string; count: number }[] = [];
 
