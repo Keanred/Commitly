@@ -1,21 +1,24 @@
-import { RouterProvider } from "@tanstack/react-router"
-import { router } from "./router"
-import { AuthProvider } from "./AuthProvider";
+import { QueryClientProvider } from '@tanstack/react-query';
+import { RouterProvider } from '@tanstack/react-router';
+import { AuthProvider } from './AuthProvider';
+import { queryClient } from './queryClient';
+import { router } from './router';
 
-
-import { useAuth } from "./AuthContext"
+import { useAuth } from './AuthContext';
 
 const AppInner = () => {
-  const auth = useAuth()
-  return <RouterProvider router={router} context={{ auth }} />
-}
+  const auth = useAuth();
+  return <RouterProvider router={router} context={{ auth }} />;
+};
 
 const App = () => {
   return (
-    <AuthProvider>
-      <AppInner />
-    </AuthProvider>
-  )
-}
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AppInner />
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
-export default App
+export default App;
