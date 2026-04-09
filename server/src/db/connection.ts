@@ -1,4 +1,5 @@
 import { loadEnvFile } from 'node:process';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
 try {
@@ -17,10 +18,12 @@ if (!databaseUrl) {
   throw new Error('Missing required environment variable: DATABASE_URL');
 }
 
-const sql = postgres(databaseUrl, {
+export const client = postgres(databaseUrl, {
   max: 10,
   idle_timeout: 20,
   connect_timeout: 10,
 });
 
-export default sql;
+export const db = drizzle(client);
+
+export default db;

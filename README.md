@@ -25,12 +25,13 @@ Weekly digest: an LLM-generated narrative summary of your recent activity
 
 - Node.js and npm
 - Docker and Docker Compose
+- just
 
 ### First-time setup
 
 1. Install dependencies from the repo root:
 
-	npm install
+	just install
 
 2. Create your server env file:
 
@@ -46,7 +47,7 @@ Weekly digest: an LLM-generated narrative summary of your recent activity
 
 From the repo root, run:
 
-npm run dev
+just dev
 
 This will:
 
@@ -58,5 +59,20 @@ By default, Commitly maps Postgres to host port `5433` to avoid collisions with 
 
 ### Useful dev commands
 
-- Stop local Postgres: `npm run dev:down`
-- Kill local Vite/TSX processes: `npm run dev:clean`
+- Stop local Postgres: `just db-down`
+- Kill local Vite/TSX processes: `just dev-clean`
+- Run DB migrations: `just db-migrate`
+- Generate Drizzle SQL migration files: `just db-generate`
+- Reset DB volume and re-run migrations: `just db-reset`
+- Build shared schemas (generation step): `just gen-schemas`
+- See all available commands: `just`
+
+### Migration workflow
+
+- Drizzle is the source of truth for database schema.
+- Typical flow for schema changes:
+	1. Update schema in `server/src/db/schema.ts`
+	2. Generate migration SQL with `just db-generate`
+	3. Apply migrations with `just db-migrate`
+
+If you are switching from the old in-code SQL migrator, run `just db-reset` once to recreate the local database from Drizzle migrations.

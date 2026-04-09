@@ -1,31 +1,50 @@
-import sql from '../connection';
+import { eq, sql } from 'drizzle-orm';
+import { db } from '../connection';
+import { users } from '../schema';
 import type { User, UserInsert } from '../../types/models';
 
 export async function getUserById(id: number): Promise<User | null> {
-  const [user] = await sql<User[]>`SELECT * FROM users WHERE id = ${id}`;
+  const [user] = await db.select().from(users).where(eq(users.id, id));
   return user || null;
 }
 
 export async function getUserByGithubId(githubId: number): Promise<User | null> {
-  const [user] = await sql<User[]>`SELECT * FROM users WHERE github_id = ${githubId}`;
+  const [user] = await db.select().from(users).where(eq(users.github_id, githubId));
   return user || null;
 }
 
 export async function updateLastSyncedAt(userId: number): Promise<void> {
-  await sql`UPDATE users SET last_synced_at = now() WHERE id = ${userId}`;
+  await db
+    .update(users)
+    .set({ last_synced_at: sql`now()` })
+    .where(eq(users.id, userId));
 }
 
 export async function upsertUser(user: UserInsert): Promise<User> {
-  const [result] = await sql<User[]>`
-    INSERT INTO users (github_id, login, name, avatar_url, access_token)
-    VALUES (${user.github_id}, ${user.login}, ${user.name}, ${user.avatar_url}, ${user.access_token})
-    ON CONFLICT (github_id) DO UPDATE SET
-      login = EXCLUDED.login,
-      name = EXCLUDED.name,
-      avatar_url = EXCLUDED.avatar_url,
-      access_token = EXCLUDED.access_token,
-      updated_at = now()
-    RETURNING *
-  `;
+  const [result] = await db
+    .insert(users)
+    .values({
+      github_id: user.github_id,
+      login: user.login,
+      name: user.name,
+      avatar_url: user.avatar_url,
+      access_token: user.access_token,
+    })
+    .onConflictDoUpdate({
+      target: users.github_id,
+      set: {
+        login: user.login,
+        name: user.name,
+        avatar_url: user.avatar_url,
+        access_token: user.access_token,
+        updated_at: sql`now()`,
+      },
+    })
+    .returning();
+
+  if (!result) {
+    throw new Error('Failed to upsert user');
+  }
+
   return result;
 }

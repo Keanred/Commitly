@@ -7,7 +7,9 @@
     "dev": "tsx watch src/main.ts",
     "build": "tsc",
     "start": "node dist/main.js",
-    "db:migrate": "tsx src/db/run-migrate.ts",
+    "db:migrate": "tsx src/db/run-drizzle-migrate.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:studio": "drizzle-kit studio",
     "test": "vitest",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts"
@@ -20,6 +22,7 @@
     "eslint-plugin-prettier": "^5.5.5",
     "prettier": "^3.8.1",
     "prettier-plugin-organize-imports": "^4.3.0",
+    "drizzle-kit": "^0.31.6",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.1",
@@ -27,6 +30,7 @@
   },
   "dependencies": {
     "@commitly/schemas": "file:../schemas",
+    "drizzle-orm": "^0.44.6",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "postgres": "^3.4.8"

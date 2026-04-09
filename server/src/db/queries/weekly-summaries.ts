@@ -1,20 +1,60 @@
-import sql from '../connection';
+import { and, eq, sql } from 'drizzle-orm';
+import { db } from '../connection';
+import { weeklySummaries } from '../schema';
 import type { WeeklySummary } from '../../types/models';
 
+function toPgDate(value: Date): string {
+  return value.toISOString().slice(0, 10);
+}
+
+function mapWeeklySummaryRow(row: {
+  id: number;
+  user_id: number;
+  week_start: string;
+  week_end: string;
+  summary_text: string;
+  generated_at: Date;
+}): WeeklySummary {
+  return {
+    ...row,
+    week_start: new Date(row.week_start),
+    week_end: new Date(row.week_end),
+  };
+}
+
 export async function getWeeklySummary(userId: number, weekStart: Date): Promise<WeeklySummary | null> {
-  const [summary] = await sql<WeeklySummary[]>`SELECT * FROM weekly_summaries WHERE user_id = ${userId} AND week_start = ${weekStart}`;
-  return summary || null;
+  const weekStartDate = toPgDate(weekStart);
+  const [summary] = await db
+    .select()
+    .from(weeklySummaries)
+    .where(and(eq(weeklySummaries.user_id, userId), eq(weeklySummaries.week_start, weekStartDate)));
+
+  return summary ? mapWeeklySummaryRow(summary) : null;
 }
 
 export async function upsertWeeklySummary(summary: Omit<WeeklySummary, 'id' | 'generated_at'>): Promise<WeeklySummary> {
-  const [result] = await sql<WeeklySummary[]>`
-    INSERT INTO weekly_summaries (user_id, week_start, week_end, summary_text, generated_at)
-    VALUES (${summary.user_id}, ${summary.week_start}, ${summary.week_end}, ${summary.summary_text}, now())
-    ON CONFLICT (user_id, week_start) DO UPDATE SET
-      week_end = EXCLUDED.week_end,
-      summary_text = EXCLUDED.summary_text,
-      generated_at = now()
-    RETURNING *
-  `;
-  return result;
+  const [result] = await db
+    .insert(weeklySummaries)
+    .values({
+      user_id: summary.user_id,
+      week_start: toPgDate(summary.week_start),
+      week_end: toPgDate(summary.week_end),
+      summary_text: summary.summary_text,
+      generated_at: sql`now()`,
+    })
+    .onConflictDoUpdate({
+      target: [weeklySummaries.user_id, weeklySummaries.week_start],
+      set: {
+        week_end: toPgDate(summary.week_end),
+        summary_text: summary.summary_text,
+        generated_at: sql`now()`,
+      },
+    })
+    .returning();
+
+  if (!result) {
+    throw new Error('Failed to upsert weekly summary');
+  }
+
+  return mapWeeklySummaryRow(result);
 }

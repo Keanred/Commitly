@@ -1,4 +1,3 @@
-export { default as sql } from './connection';
-export { migrate } from './migrate';
+export { db, client } from './connection';
 export * from './queries';
 export type * from '../types/models';

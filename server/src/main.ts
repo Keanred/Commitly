@@ -1,8 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { createServer } from 'http';
 import cfg from './config';
-import { migrate } from './db';
-import sql from './db/connection';
+import { client } from './db/connection';
 import authRouter from './routes/auth';
 import reposRouter from './routes/repos';
 import commitsRouter from './routes/commits';
@@ -43,7 +42,6 @@ app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
 server.setTimeout(cfg.apiServer.timeout);
 
 async function start() {
-  await migrate();
   server.listen(cfg.apiServer.port, () => {
     console.log(`Server is running on port ${cfg.apiServer.port}`);
   });
@@ -53,7 +51,7 @@ async function start() {
 function shutdown(signal: string) {
   console.log(`${signal} received, shutting down...`);
   server.close(async () => {
-    await sql.end();
+    await client.end();
     process.exit(0);
   });
 }
