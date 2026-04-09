@@ -22,7 +22,7 @@ const PeakHoursCard = (props: PeakHoursCardProps) => {
     const peak = entries[0][0];
     const range = blockTimeRanges[peak] ?? '';
     return `Peak productivity: ${peak} (${range})`;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.commitByHour]);
 
   return (

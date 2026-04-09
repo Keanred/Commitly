@@ -1,7 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm';
+import type { WeeklySummary } from '../../types/models';
 import { db } from '../connection';
 import { weeklySummaries } from '../schema';
-import type { WeeklySummary } from '../../types/models';
 
 function toPgDate(value: Date): string {
   return value.toISOString().slice(0, 10);

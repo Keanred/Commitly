@@ -1,33 +1,33 @@
-import { Box, Typography } from "@mui/material"
-import type { ReactNode } from "react"
+import { Box, Typography } from '@mui/material';
+import type { ReactNode } from 'react';
 
 interface FilterSelectProps {
-  label: string
-  children: ReactNode
-  value?: string
-  onChange?: (value: string) => void
+  label: string;
+  children: ReactNode;
+  value?: string;
+  onChange?: (value: string) => void;
 }
 
 const FilterSelect = ({ label, children, value, onChange }: FilterSelectProps) => (
   <Box
     sx={{
-      bgcolor: "surfaceContainer",
+      bgcolor: 'surfaceContainer',
       px: 2,
       py: 1,
       borderRadius: 2,
-      display: "flex",
-      alignItems: "center",
+      display: 'flex',
+      alignItems: 'center',
       gap: 1.5,
     }}
   >
     <Typography
       sx={{
-        fontSize: "0.75rem",
+        fontSize: '0.75rem',
         fontWeight: 700,
-        textTransform: "uppercase",
-        letterSpacing: "0.05em",
-        color: "onSurfaceVariant",
-        whiteSpace: "nowrap",
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+        color: 'onSurfaceVariant',
+        whiteSpace: 'nowrap',
       }}
     >
       {label}
@@ -37,20 +37,20 @@ const FilterSelect = ({ label, children, value, onChange }: FilterSelectProps) =
       value={value}
       onChange={onChange ? (event) => onChange(event.target.value) : undefined}
       sx={{
-        bgcolor: "transparent",
-        border: "none",
-        fontSize: "0.875rem",
+        bgcolor: 'transparent',
+        border: 'none',
+        fontSize: '0.875rem',
         fontWeight: 600,
-        color: "primary.main",
-        outline: "none",
-        cursor: "pointer",
+        color: 'primary.main',
+        outline: 'none',
+        cursor: 'pointer',
         p: 0,
-        "& option": { bgcolor: "surfaceContainer", color: "onSurface" },
+        '& option': { bgcolor: 'surfaceContainer', color: 'onSurface' },
       }}
     >
       {children}
     </Box>
   </Box>
-)
+);
 
-export default FilterSelect
+export default FilterSelect;

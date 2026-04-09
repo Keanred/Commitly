@@ -1,1 +1,1 @@
-export { default } from "./StatusListItem"
+export { default } from './StatusListItem';

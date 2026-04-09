@@ -1,2 +1,2 @@
-export { default, SIDEBAR_WIDTH } from "./Sidebar"
-export type { NavItem } from "./Sidebar"
+export { SIDEBAR_WIDTH, default } from './Sidebar';
+export type { NavItem } from './Sidebar';

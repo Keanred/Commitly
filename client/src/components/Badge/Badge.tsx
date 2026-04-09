@@ -1,19 +1,19 @@
-import { Box } from "@mui/material"
-import type { ReactNode } from "react"
-import type { SxProps, Theme } from "@mui/material/styles"
+import { Box } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
+import type { ReactNode } from 'react';
 
 interface BadgeProps {
-  children: ReactNode
-  bgcolor?: string
-  color?: string
-  pill?: boolean
-  sx?: SxProps<Theme>
+  children: ReactNode;
+  bgcolor?: string;
+  color?: string;
+  pill?: boolean;
+  sx?: SxProps<Theme>;
 }
 
 const Badge = ({
   children,
-  bgcolor = "surfaceContainerHigh",
-  color = "onSurfaceVariant",
+  bgcolor = 'surfaceContainerHigh',
+  color = 'onSurfaceVariant',
   pill = false,
   sx,
 }: BadgeProps) => (
@@ -21,13 +21,13 @@ const Badge = ({
     component="span"
     sx={[
       {
-        display: "inline-block",
+        display: 'inline-block',
         px: 1,
         py: 0.25,
         borderRadius: pill ? 50 : 0.5,
         bgcolor,
         color,
-        fontSize: "0.75rem",
+        fontSize: '0.75rem',
         fontWeight: 700,
       },
       ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
@@ -35,6 +35,6 @@ const Badge = ({
   >
     {children}
   </Box>
-)
+);
 
-export default Badge
+export default Badge;

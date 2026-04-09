@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
+import type { Commit, CommitInsert } from '../../types/models';
 import { db } from '../connection';
 import { commits as commitsTable } from '../schema';
-import type { Commit, CommitInsert } from '../../types/models';
 
 export async function getCommitsByRepo(repoId: number): Promise<Commit[]> {
   return db.select().from(commitsTable).where(eq(commitsTable.repo_id, repoId));

@@ -1,2 +1,2 @@
-export { default } from "./MobileNav"
-export type { MobileNavItem } from "./MobileNav"
+export { default } from './MobileNav';
+export type { MobileNavItem } from './MobileNav';

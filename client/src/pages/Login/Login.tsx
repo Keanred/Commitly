@@ -1,7 +1,7 @@
-import { Box } from "@mui/material"
-import MeshBackground from "../../components/MeshBackground"
-import Footer from "../../components/Footer"
-import LoginCard from "./LoginCard"
+import { Box } from '@mui/material';
+import Footer from '../../components/Footer';
+import MeshBackground from '../../components/MeshBackground';
+import LoginCard from './LoginCard';
 
 const Login = () => {
   return (
@@ -11,7 +11,7 @@ const Login = () => {
       </MeshBackground>
       <Footer />
     </Box>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

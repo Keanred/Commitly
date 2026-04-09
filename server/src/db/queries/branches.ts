@@ -1,7 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
+import type { Branch, BranchInsert } from '../../types/models';
 import { db } from '../connection';
 import { branches } from '../schema';
-import type { Branch, BranchInsert } from '../../types/models';
 
 export async function getBranchesByRepo(repoId: number): Promise<Branch[]> {
   return db.select().from(branches).where(eq(branches.repo_id, repoId));

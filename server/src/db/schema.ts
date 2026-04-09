@@ -1,15 +1,4 @@
-import {
-  bigint,
-  boolean,
-  date,
-  index,
-  integer,
-  pgTable,
-  serial,
-  text,
-  timestamp,
-  unique,
-} from 'drizzle-orm/pg-core';
+import { bigint, boolean, date, index, integer, pgTable, serial, text, timestamp, unique } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -126,10 +115,7 @@ export const weeklySummaries = pgTable(
   },
   (table) => ({
     weeklySummariesUserWeekUnique: unique().on(table.user_id, table.week_start),
-    idxWeeklySummariesUser: index('idx_weekly_summaries_user').on(
-      table.user_id,
-      table.week_start,
-    ),
+    idxWeeklySummariesUser: index('idx_weekly_summaries_user').on(table.user_id, table.week_start),
   }),
 );
 
@@ -155,10 +141,7 @@ export const pullRequests = pgTable(
   },
   (table) => ({
     pullRequestsRepoGithubUnique: unique().on(table.repo_id, table.github_id),
-    idxPullRequestsUserDate: index('idx_pull_requests_user_date').on(
-      table.user_id,
-      table.merged_at,
-    ),
+    idxPullRequestsUserDate: index('idx_pull_requests_user_date').on(table.user_id, table.merged_at),
     idxPullRequestsRepo: index('idx_pull_requests_repo').on(table.repo_id),
   }),
 );

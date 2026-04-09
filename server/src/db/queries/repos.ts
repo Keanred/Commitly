@@ -1,7 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
+import type { Repo, RepoInsert } from '../../types/models';
 import { db } from '../connection';
 import { repos } from '../schema';
-import type { Repo, RepoInsert } from '../../types/models';
 
 export async function getReposByUser(userId: number): Promise<Repo[]> {
   return db.select().from(repos).where(eq(repos.user_id, userId));

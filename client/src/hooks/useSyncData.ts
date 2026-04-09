@@ -1,4 +1,3 @@
-import { useState, useCallback } from 'react';
 import {
   fetchBranchesResponseSchema,
   fetchCommitsResponseSchema,
@@ -7,6 +6,7 @@ import {
   type FetchCommitsResponse,
   type FetchLanguagesResponse,
 } from '@commitly/schemas';
+import { useCallback, useState } from 'react';
 import { api } from '../client';
 
 export type SyncStep = 'repos' | 'commits' | 'languages' | 'branches';
@@ -36,21 +36,36 @@ export const useSyncData = () => {
     setProgress({ currentStep: null, completedSteps: [], totalCommits: 0, totalLanguages: 0, totalBranches: 0 });
 
     try {
-      setProgress(p => ({ ...p, currentStep: 'repos' }));
+      setProgress((p) => ({ ...p, currentStep: 'repos' }));
       await api('/api/v1/repos/fetch');
-      setProgress(p => ({ ...p, currentStep: 'commits', completedSteps: [...p.completedSteps, 'repos'] }));
+      setProgress((p) => ({ ...p, currentStep: 'commits', completedSteps: [...p.completedSteps, 'repos'] }));
 
       const commits = await api<FetchCommitsResponse>('/api/v1/commits/fetch');
       const parsedCommits = fetchCommitsResponseSchema.parse(commits);
-      setProgress(p => ({ ...p, currentStep: 'languages', completedSteps: [...p.completedSteps, 'commits'], totalCommits: parsedCommits.totalCommits }));
+      setProgress((p) => ({
+        ...p,
+        currentStep: 'languages',
+        completedSteps: [...p.completedSteps, 'commits'],
+        totalCommits: parsedCommits.totalCommits,
+      }));
 
       const languages = await api<FetchLanguagesResponse>('/api/v1/repos/fetch-languages');
       const parsedLanguages = fetchLanguagesResponseSchema.parse(languages);
-      setProgress(p => ({ ...p, currentStep: 'branches', completedSteps: [...p.completedSteps, 'languages'], totalLanguages: parsedLanguages.totalLanguages }));
+      setProgress((p) => ({
+        ...p,
+        currentStep: 'branches',
+        completedSteps: [...p.completedSteps, 'languages'],
+        totalLanguages: parsedLanguages.totalLanguages,
+      }));
 
       const branches = await api<FetchBranchesResponse>('/api/v1/repos/fetch-branches');
       const parsedBranches = fetchBranchesResponseSchema.parse(branches);
-      setProgress(p => ({ ...p, currentStep: null, completedSteps: [...p.completedSteps, 'branches'], totalBranches: parsedBranches.totalBranches }));
+      setProgress((p) => ({
+        ...p,
+        currentStep: null,
+        completedSteps: [...p.completedSteps, 'branches'],
+        totalBranches: parsedBranches.totalBranches,
+      }));
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)));
     } finally {

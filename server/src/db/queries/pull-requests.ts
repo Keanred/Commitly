@@ -1,7 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
+import type { PullRequest, PullRequestInsert } from '../../types/models';
 import { db } from '../connection';
 import { pullRequests } from '../schema';
-import type { PullRequest, PullRequestInsert } from '../../types/models';
 
 export async function getPullRequestsByUser(userId: number): Promise<PullRequest[]> {
   return db.select().from(pullRequests).where(eq(pullRequests.user_id, userId));

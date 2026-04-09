@@ -1,1 +1,1 @@
-export { default } from "./RepositoryHealth"
+export { default } from './RepositoryHealth';

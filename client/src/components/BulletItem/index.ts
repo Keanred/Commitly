@@ -1,1 +1,1 @@
-export { default } from "./BulletItem"
+export { default } from './BulletItem';

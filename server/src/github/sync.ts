@@ -1,8 +1,23 @@
-import type { User } from '../types/models';
-import { fetchUserRepos, fetchRepoCommits, fetchRepoLanguages, fetchRepoBranches, fetchRepoPullRequests, fetchRepoCommitBySha, fetchRepoHasReadme } from './client';
-import { mapGitHubRepo, mapGitHubCommit, mapGitHubPullRequest } from './mappers';
-import { upsertRepo, insertCommits, upsertLanguage, upsertBranch, updateLastSyncedAt, insertPullRequests } from '../db/queries';
 import cfg from '../config';
+import {
+  insertCommits,
+  insertPullRequests,
+  updateLastSyncedAt,
+  upsertBranch,
+  upsertLanguage,
+  upsertRepo,
+} from '../db/queries';
+import type { User } from '../types/models';
+import {
+  fetchRepoBranches,
+  fetchRepoCommitBySha,
+  fetchRepoCommits,
+  fetchRepoHasReadme,
+  fetchRepoLanguages,
+  fetchRepoPullRequests,
+  fetchUserRepos,
+} from './client';
+import { mapGitHubCommit, mapGitHubPullRequest, mapGitHubRepo } from './mappers';
 
 export function needsSync(user: User): boolean {
   if (!user.last_synced_at) return true;
@@ -16,7 +31,7 @@ export async function syncUserData(user: User, accessToken: string): Promise<voi
       const [owner, repoName] = repo.full_name.split('/');
       const hasReadme = await fetchRepoHasReadme(accessToken, owner, repoName);
       return upsertRepo(mapGitHubRepo(user.id, repo, hasReadme));
-    })
+    }),
   );
 
   // Limit commit sync to ~13 months to cover all dashboard timeframes (max: 52-week history)

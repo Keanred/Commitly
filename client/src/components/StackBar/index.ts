@@ -1,1 +1,1 @@
-export { default } from "./StackBar"
+export { default } from './StackBar';

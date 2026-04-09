@@ -1,28 +1,30 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
+import session from 'express-session';
 import { createServer } from 'http';
 import cfg from './config';
 import { client } from './db/connection';
+import { requireAuth } from './middleware';
 import authRouter from './routes/auth';
-import reposRouter from './routes/repos';
 import commitsRouter from './routes/commits';
 import metricsRouter from './routes/metrics';
+import reposRouter from './routes/repos';
 import summaryRouter from './routes/summary';
-import session from 'express-session';
-import { requireAuth } from './middleware';
 
 const app = express();
 const server = createServer(app);
 
 app.use(express.json());
 
-app.use(session({
-  secret: cfg.sessionSecret,
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: false }, // set to true in production with HTTPS
-}));
+app.use(
+  session({
+    secret: cfg.sessionSecret,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false }, // set to true in production with HTTPS
+  }),
+);
 
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.send('Hello, World!');
 });
 
@@ -34,7 +36,7 @@ app.use('/api/v1/metrics', requireAuth, metricsRouter);
 app.use('/api/v1/summary', requireAuth, summaryRouter);
 
 // Global error handler
-app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
   res.status(500).json({ error: 'Internal server error' });
 });
@@ -59,7 +61,7 @@ function shutdown(signal: string) {
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 
-start().catch(err => {
+start().catch((err) => {
   console.error('Failed to start server:', err);
   process.exit(1);
 });

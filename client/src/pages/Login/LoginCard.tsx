@@ -1,6 +1,6 @@
-import { Box, Button, Typography } from "@mui/material"
-import GitHubIcon from "@mui/icons-material/GitHub"
-import TerminalIcon from "@mui/icons-material/Terminal"
+import GitHubIcon from '@mui/icons-material/GitHub';
+import TerminalIcon from '@mui/icons-material/Terminal';
+import { Box, Button, Typography } from '@mui/material';
 
 const LoginCard = () => {
   return (
@@ -44,14 +44,19 @@ const LoginCard = () => {
 
         {/* Action Section */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <Button variant="contained" fullWidth href="/auth/github" sx={{ py: 1.75, px: 3, gap: 1.5, fontSize: '0.95rem' }}>
+          <Button
+            variant="contained"
+            fullWidth
+            href="/auth/github"
+            sx={{ py: 1.75, px: 3, gap: 1.5, fontSize: '0.95rem' }}
+          >
             <GitHubIcon sx={{ fontSize: 24 }} />
             Login with GitHub
           </Button>
         </Box>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default LoginCard
+export default LoginCard;

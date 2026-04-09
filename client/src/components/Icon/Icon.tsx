@@ -1,20 +1,20 @@
-import { Box } from "@mui/material"
-import type { SxProps, Theme } from "@mui/material/styles"
+import { Box } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
 
 interface IconProps {
-  name: string
-  filled?: boolean
-  className?: string
-  sx?: SxProps<Theme>
+  name: string;
+  filled?: boolean;
+  className?: string;
+  sx?: SxProps<Theme>;
 }
 
 const Icon = ({ name, filled, className, sx }: IconProps) => (
   <Box
     component="span"
-    className={`material-symbols-outlined${className ? ` ${className}` : ""}`}
+    className={`material-symbols-outlined${className ? ` ${className}` : ''}`}
     sx={[
       {
-        verticalAlign: "middle",
+        verticalAlign: 'middle',
         lineHeight: 1,
         ...(filled ? { fontVariationSettings: "'FILL' 1" } : {}),
       },
@@ -23,6 +23,6 @@ const Icon = ({ name, filled, className, sx }: IconProps) => (
   >
     {name}
   </Box>
-)
+);
 
-export default Icon
+export default Icon;

@@ -1,8 +1,4 @@
-import type {
-  CommitsByHourResponse,
-  CommitsByDayResponse,
-  CommitHistoryResponse,
-} from '@commitly/schemas';
+import type { CommitHistoryResponse, CommitsByDayResponse, CommitsByHourResponse } from '@commitly/schemas';
 
 export type CommitHistoryCell = { date: string; count: number; intensity: number };
 export type CommitHistoryData = CommitHistoryCell[];
@@ -30,18 +26,14 @@ export function transformCommitsByHour(response: CommitsByHourResponse): Commits
 
   const max = Math.max(...Object.values(blockCounts), 1);
   return {
-    commitByHour: Object.fromEntries(
-      blocks.map((b) => [b.label, Math.round((blockCounts[b.label] / max) * 100)]),
-    ),
+    commitByHour: Object.fromEntries(blocks.map((b) => [b.label, Math.round((blockCounts[b.label] / max) * 100)])),
   };
 }
 
 export function transformCommitsByDay(response: CommitsByDayResponse): CommitsByDayResponse {
   const max = Math.max(...Object.values(response.commitByDay), 1);
   return {
-    commitByDay: Object.fromEntries(
-      Object.entries(response.commitByDay).map(([day, count]) => [day, count / max]),
-    ),
+    commitByDay: Object.fromEntries(Object.entries(response.commitByDay).map(([day, count]) => [day, count / max])),
   };
 }
 

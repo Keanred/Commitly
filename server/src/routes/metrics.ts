@@ -1,4 +1,3 @@
-import { Router, Request, Response } from 'express';
 import {
   activeReposResponseSchema,
   commitHistoryResponseSchema,
@@ -9,7 +8,14 @@ import {
   globalIntegrityResponseSchema,
   weeklyDeltaResponseSchema,
 } from '@commitly/schemas';
-import { getCommitsByUser, getLanguagesByRepo, getBranchesByRepo, getReposByUser, getPullRequestsByUser } from '../db/queries';
+import { Request, Response, Router } from 'express';
+import {
+  getBranchesByRepo,
+  getCommitsByUser,
+  getLanguagesByRepo,
+  getPullRequestsByUser,
+  getReposByUser,
+} from '../db/queries';
 import { getCachedDashboardData, setCachedDashboardData } from '../metrics/dashboardCache';
 import type { Branch } from '../types/models';
 
@@ -25,7 +31,9 @@ function toIsoDateKey(date: Date): string {
 }
 
 function computeStreak(allCommits: Awaited<ReturnType<typeof getCommitsByUser>>) {
-  const commitDates = Array.from(new Set(allCommits.map(commit => toIsoDateKey(new Date(commit.committed_at))))).sort();
+  const commitDates = Array.from(
+    new Set(allCommits.map((commit) => toIsoDateKey(new Date(commit.committed_at)))),
+  ).sort();
   let currentStreak = 0;
   let longestStreak = 0;
   let previousDate: string | null = null;
@@ -96,15 +104,19 @@ function computeWeeklyCommitData(allCommits: Awaited<ReturnType<typeof getCommit
     if (commitDate >= startOfWeek) thisWeekCount++;
     else if (commitDate >= startOfLastWeek && commitDate < startOfWeek) lastWeekCount++;
   }
-  return weeklyDeltaResponseSchema.parse({ thisWeek: thisWeekCount, lastWeek: lastWeekCount, delta: thisWeekCount - lastWeekCount });
+  return weeklyDeltaResponseSchema.parse({
+    thisWeek: thisWeekCount,
+    lastWeek: lastWeekCount,
+    delta: thisWeekCount - lastWeekCount,
+  });
 }
 
 function computeWeeklyQualityData(allCommits: Awaited<ReturnType<typeof getCommitsByUser>>) {
   const today = new Date();
   const startOfWeek = new Date(today.getTime() - today.getDay() * 24 * 60 * 60 * 1000);
   const startOfLastWeek = new Date(startOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const thisWeekCommits = allCommits.filter(c => new Date(c.committed_at) >= startOfWeek);
-  const lastWeekCommits = allCommits.filter(c => {
+  const thisWeekCommits = allCommits.filter((c) => new Date(c.committed_at) >= startOfWeek);
+  const lastWeekCommits = allCommits.filter((c) => {
     const d = new Date(c.committed_at);
     return d >= startOfLastWeek && d < startOfWeek;
   });
@@ -113,14 +125,18 @@ function computeWeeklyQualityData(allCommits: Awaited<ReturnType<typeof getCommi
     if (commits.length === 0) return 0;
     const avgChanges = commits.reduce((sum, c) => sum + c.additions + c.deletions, 0) / commits.length;
     const sizeScore = Math.max(0, Math.min(50, 50 - ((avgChanges - 50) / 450) * 50));
-    const uniqueDays = new Set(commits.map(c => toIsoDateKey(new Date(c.committed_at)))).size;
+    const uniqueDays = new Set(commits.map((c) => toIsoDateKey(new Date(c.committed_at)))).size;
     const consistencyScore = Math.min(50, (uniqueDays / 7) * 50);
     return Math.round(sizeScore + consistencyScore);
   }
 
   const thisWeekQuality = calcQuality(thisWeekCommits);
   const lastWeekQuality = calcQuality(lastWeekCommits);
-  return weeklyDeltaResponseSchema.parse({ thisWeek: thisWeekQuality, lastWeek: lastWeekQuality, delta: thisWeekQuality - lastWeekQuality });
+  return weeklyDeltaResponseSchema.parse({
+    thisWeek: thisWeekQuality,
+    lastWeek: lastWeekQuality,
+    delta: thisWeekQuality - lastWeekQuality,
+  });
 }
 
 function computeWeeklyPRData(allPRs: Awaited<ReturnType<typeof getPullRequestsByUser>>) {
@@ -135,7 +151,11 @@ function computeWeeklyPRData(allPRs: Awaited<ReturnType<typeof getPullRequestsBy
     if (mergedDate >= startOfWeek) thisWeekMerged++;
     else if (mergedDate >= startOfLastWeek && mergedDate < startOfWeek) lastWeekMerged++;
   }
-  return weeklyDeltaResponseSchema.parse({ thisWeek: thisWeekMerged, lastWeek: lastWeekMerged, delta: thisWeekMerged - lastWeekMerged });
+  return weeklyDeltaResponseSchema.parse({
+    thisWeek: thisWeekMerged,
+    lastWeek: lastWeekMerged,
+    delta: thisWeekMerged - lastWeekMerged,
+  });
 }
 
 function computeActiveRepos(repos: Awaited<ReturnType<typeof getReposByUser>>) {
@@ -146,11 +166,9 @@ function computeActiveRepos(repos: Awaited<ReturnType<typeof getReposByUser>>) {
   });
 
   const now = new Date();
-  const repoData = sorted.map(repo => {
+  const repoData = sorted.map((repo) => {
     const lastPush = repo.pushed_at ? new Date(repo.pushed_at) : null;
-    const daysSinceActivity = lastPush
-      ? (now.getTime() - lastPush.getTime()) / (1000 * 60 * 60 * 24)
-      : Infinity;
+    const daysSinceActivity = lastPush ? (now.getTime() - lastPush.getTime()) / (1000 * 60 * 60 * 24) : Infinity;
 
     let status: 'healthy' | 'maintenance' | 'failing' = 'healthy';
     if (daysSinceActivity > 90) status = 'failing';
@@ -212,7 +230,9 @@ metricsRouter.get('/dashboard', async (req: Request, res: Response) => {
 metricsRouter.get('/commits/streak', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
   const allCommits = await getCommitsByUser(userId);
-  const commitDates = Array.from(new Set(allCommits.map(commit => commit.committed_at.toISOString().split('T')[0]))).sort();
+  const commitDates = Array.from(
+    new Set(allCommits.map((commit) => commit.committed_at.toISOString().split('T')[0])),
+  ).sort();
 
   let currentStreak = 0;
   let longestStreak = 0;
@@ -343,8 +363,8 @@ metricsRouter.get('/quality/weekly', async (req: Request, res: Response) => {
   const startOfWeek = new Date(today.getTime() - today.getDay() * 24 * 60 * 60 * 1000);
   const startOfLastWeek = new Date(startOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-  const thisWeekCommits = allCommits.filter(c => new Date(c.committed_at) >= startOfWeek);
-  const lastWeekCommits = allCommits.filter(c => {
+  const thisWeekCommits = allCommits.filter((c) => new Date(c.committed_at) >= startOfWeek);
+  const lastWeekCommits = allCommits.filter((c) => {
     const d = new Date(c.committed_at);
     return d >= startOfLastWeek && d < startOfWeek;
   });
@@ -358,7 +378,7 @@ metricsRouter.get('/quality/weekly', async (req: Request, res: Response) => {
     const sizeScore = Math.max(0, Math.min(50, 50 - ((avgChanges - 50) / 450) * 50));
 
     // 2. Consistency score (0-50): how many unique days had commits out of 7
-    const uniqueDays = new Set(commits.map(c => new Date(c.committed_at).toISOString().split('T')[0])).size;
+    const uniqueDays = new Set(commits.map((c) => new Date(c.committed_at).toISOString().split('T')[0])).size;
     const consistencyScore = Math.min(50, (uniqueDays / 7) * 50);
 
     return Math.round(sizeScore + consistencyScore);
@@ -382,11 +402,9 @@ metricsRouter.get('/repos', async (req: Request, res: Response) => {
   });
   const now = new Date();
 
-  const repoData = repos.map(repo => {
+  const repoData = repos.map((repo) => {
     const lastPush = repo.pushed_at ? new Date(repo.pushed_at) : null;
-    const daysSinceActivity = lastPush
-      ? (now.getTime() - lastPush.getTime()) / (1000 * 60 * 60 * 24)
-      : Infinity;
+    const daysSinceActivity = lastPush ? (now.getTime() - lastPush.getTime()) / (1000 * 60 * 60 * 24) : Infinity;
 
     let status: string = 'healthy';
     if (daysSinceActivity > 90) {
@@ -423,7 +441,7 @@ metricsRouter.get('/repos', async (req: Request, res: Response) => {
 metricsRouter.get('/repos/languages', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
   const repos = await getReposByUser(userId);
-  const languageArrays = await Promise.all(repos.map(repo => getLanguagesByRepo(repo.id)));
+  const languageArrays = await Promise.all(repos.map((repo) => getLanguagesByRepo(repo.id)));
   const languageTotals: { [lang: string]: number } = {};
   for (const langArr of languageArrays) {
     for (const langObj of langArr) {
@@ -456,7 +474,7 @@ metricsRouter.get('/repos/stale-branches', async (req: Request, res: Response) =
       })
       .map((branch: Branch) => ({
         branch: branch.name,
-        lastCommitDate: branch.last_commit_date ? branch.last_commit_date.toISOString() : null
+        lastCommitDate: branch.last_commit_date ? branch.last_commit_date.toISOString() : null,
       }));
     result[repo.name] = staleBranches;
   }
@@ -497,9 +515,7 @@ metricsRouter.get('/global-integrity', async (req: Request, res: Response) => {
 
   for (const repo of repos) {
     const lastPush = repo.pushed_at ? new Date(repo.pushed_at) : null;
-    const daysSinceActivity = lastPush
-      ? (now.getTime() - lastPush.getTime()) / (1000 * 60 * 60 * 24)
-      : Infinity;
+    const daysSinceActivity = lastPush ? (now.getTime() - lastPush.getTime()) / (1000 * 60 * 60 * 24) : Infinity;
 
     if (daysSinceActivity > 90) {
       failingRepos++;
@@ -531,28 +547,26 @@ metricsRouter.get('/global-integrity', async (req: Request, res: Response) => {
 
   const allCommits = await getCommitsByUser(userId);
   const startOfWeek = new Date(now.getTime() - now.getDay() * 24 * 60 * 60 * 1000);
-  const thisWeekCommits = allCommits.filter(commit => new Date(commit.committed_at) >= startOfWeek);
+  const thisWeekCommits = allCommits.filter((commit) => new Date(commit.committed_at) >= startOfWeek);
   let qualityScore = 0;
   if (thisWeekCommits.length > 0) {
-    const avgChanges = thisWeekCommits.reduce((sum, commit) => sum + commit.additions + commit.deletions, 0) / thisWeekCommits.length;
+    const avgChanges =
+      thisWeekCommits.reduce((sum, commit) => sum + commit.additions + commit.deletions, 0) / thisWeekCommits.length;
     const sizeScore = Math.max(0, Math.min(50, 50 - ((avgChanges - 50) / 450) * 50));
-    const uniqueDays = new Set(thisWeekCommits.map(commit => new Date(commit.committed_at).toISOString().split('T')[0])).size;
+    const uniqueDays = new Set(
+      thisWeekCommits.map((commit) => new Date(commit.committed_at).toISOString().split('T')[0]),
+    ).size;
     const consistencyScore = Math.min(50, (uniqueDays / 7) * 50);
     qualityScore = clampScore(sizeScore + consistencyScore);
   }
 
-  const reposMissingReadme = repos.filter(repo => !repo.has_readme).length;
+  const reposMissingReadme = repos.filter((repo) => !repo.has_readme).length;
   const readmeCoverage = ((repos.length - reposMissingReadme) / repos.length) * 100;
   const avgOpenIssues = repos.reduce((sum, repo) => sum + repo.open_issues, 0) / repos.length;
   const issueScore = Math.max(0, 100 - Math.min(100, avgOpenIssues * 5));
   const hygieneScore = clampScore(readmeCoverage * 0.6 + issueScore * 0.4);
 
-  const score = clampScore(
-    activityScore * 0.45 +
-    branchHygieneScore * 0.3 +
-    qualityScore * 0.15 +
-    hygieneScore * 0.1
-  );
+  const score = clampScore(activityScore * 0.45 + branchHygieneScore * 0.3 + qualityScore * 0.15 + hygieneScore * 0.1);
 
   let summary = 'Your repositories are in excellent health overall.';
   if (failingRepos > 0) {

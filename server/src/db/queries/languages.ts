@@ -1,7 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
+import type { Language, LanguageInsert } from '../../types/models';
 import { db } from '../connection';
 import { languages } from '../schema';
-import type { Language, LanguageInsert } from '../../types/models';
 
 export async function getLanguagesByRepo(repoId: number): Promise<Language[]> {
   return db.select().from(languages).where(eq(languages.repo_id, repoId));

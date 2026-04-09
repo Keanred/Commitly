@@ -1,1 +1,1 @@
-export { default } from "./ContributionGrid"
+export { default } from './ContributionGrid';

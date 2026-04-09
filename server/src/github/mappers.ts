@@ -1,4 +1,4 @@
-import type { RepoInsert, CommitInsert, PullRequestInsert } from '../types/models';
+import type { CommitInsert, PullRequestInsert, RepoInsert } from '../types/models';
 
 export function mapGitHubRepo(userId: number, repo: any, hasReadme: boolean): RepoInsert {
   return {

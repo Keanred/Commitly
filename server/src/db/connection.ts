@@ -1,5 +1,5 @@
-import { loadEnvFile } from 'node:process';
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { loadEnvFile } from 'node:process';
 import postgres from 'postgres';
 
 try {

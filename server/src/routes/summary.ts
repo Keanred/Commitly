@@ -1,9 +1,9 @@
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
 
 const summaryRouter = Router();
 
 // Weekly OpenAI-generated digest
-summaryRouter.get('/weekly', (req: Request, res: Response) => {
+summaryRouter.get('/weekly', (_req: Request, res: Response) => {
   res.status(501).json({ error: 'Not implemented' });
 });
 

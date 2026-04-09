@@ -1,1 +1,1 @@
-export { default } from "./HealthRepoCard"
+export { default } from './HealthRepoCard';

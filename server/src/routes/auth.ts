@@ -1,16 +1,16 @@
 import { Request, Response, Router } from 'express';
 import cfg from '../config';
-import type { User } from '../types/models';
+import { getUserById, upsertUser } from '../db/queries';
 import { fetchGitHub } from '../github/client';
-import { upsertUser, getUserById } from '../db/queries';
-import { syncUserData, needsSync } from '../github/sync';
+import { needsSync, syncUserData } from '../github/sync';
+import type { User } from '../types/models';
 
 const authRouter = Router();
 
 async function exchangeCodeForToken(code: string): Promise<string | null> {
-  const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
-    method: "POST",
-    headers: { Accept: "application/json" },
+  const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+    method: 'POST',
+    headers: { Accept: 'application/json' },
     body: new URLSearchParams({
       client_id: cfg.github.clientId,
       client_secret: cfg.github.clientSecret,
@@ -33,15 +33,15 @@ async function fetchAndUpsertUser(accessToken: string): Promise<User> {
   });
 }
 
-authRouter.get("/github", (req: Request, res: Response) => {
+authRouter.get('/github', (_req: Request, res: Response) => {
   const params = new URLSearchParams({
     client_id: cfg.github.clientId,
-    scope: "read:user repo",
+    scope: 'read:user repo',
   });
   res.redirect(`https://github.com/login/oauth/authorize?${params}`);
 });
 
-authRouter.get("/github/callback", async (req: Request, res: Response) => {
+authRouter.get('/github/callback', async (req: Request, res: Response) => {
   const { code } = req.query;
 
   if (!code || typeof code !== 'string') {
@@ -68,7 +68,7 @@ authRouter.get("/github/callback", async (req: Request, res: Response) => {
 
   // Background sync — only if not recently synced
   if (needsSync(user)) {
-    syncUserData(user, accessToken).catch(err => {
+    syncUserData(user, accessToken).catch((err) => {
       console.error('Background sync error:', err);
     });
   }
@@ -76,23 +76,23 @@ authRouter.get("/github/callback", async (req: Request, res: Response) => {
   res.redirect(`${cfg.clientURL}/dashboard`);
 });
 
-authRouter.get("/me", async (req: Request, res: Response) => {
+authRouter.get('/me', async (req: Request, res: Response) => {
   if (!req.session.userId) {
-    res.status(401).json({ error: "Unauthorized" });
+    res.status(401).json({ error: 'Unauthorized' });
     return;
   }
 
   const user = await getUserById(req.session.userId);
   if (!user) {
-    res.status(404).json({ error: "User not found" });
+    res.status(404).json({ error: 'User not found' });
     return;
   }
 
-  const { access_token, ...safeUser } = user;
+  const { access_token: _access_token, ...safeUser } = user;
   res.json(safeUser);
 });
 
-authRouter.post("/logout", (req: Request, res: Response) => {
+authRouter.post('/logout', (req: Request, res: Response) => {
   req.session.destroy(() => {
     res.clearCookie('connect.sid');
     res.json({ ok: true });

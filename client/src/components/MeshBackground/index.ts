@@ -1,1 +1,1 @@
-export { default } from "./MeshBackground"
+export { default } from './MeshBackground';

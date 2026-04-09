@@ -1,9 +1,9 @@
-import { Box } from "@mui/material"
-import { alpha } from "@mui/material/styles"
-import { ReactNode } from "react"
+import { Box } from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import { ReactNode } from 'react';
 
 interface MeshBackgroundProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 const MeshBackground = ({ children }: MeshBackgroundProps) => {
@@ -24,14 +24,36 @@ const MeshBackground = ({ children }: MeshBackgroundProps) => {
       }}
     >
       <Box sx={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: 0.2 }}>
-        <Box sx={{ position: 'absolute', top: '25%', left: '25%', width: 384, height: 384, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2), borderRadius: '50%', filter: 'blur(120px)' }} />
-        <Box sx={{ position: 'absolute', bottom: '25%', right: '25%', width: 256, height: 256, bgcolor: (theme) => alpha(theme.palette.tertiary.main, 0.1), borderRadius: '50%', filter: 'blur(100px)' }} />
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '25%',
+            left: '25%',
+            width: 384,
+            height: 384,
+            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2),
+            borderRadius: '50%',
+            filter: 'blur(120px)',
+          }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: '25%',
+            right: '25%',
+            width: 256,
+            height: 256,
+            bgcolor: (theme) => alpha(theme.palette.tertiary.main, 0.1),
+            borderRadius: '50%',
+            filter: 'blur(100px)',
+          }}
+        />
       </Box>
       <Box sx={{ position: 'relative', zIndex: 10, width: '100%', display: 'flex', justifyContent: 'center' }}>
         {children}
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default MeshBackground
+export default MeshBackground;

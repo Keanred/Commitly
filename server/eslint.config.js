@@ -13,8 +13,11 @@ export default defineConfig([
     extends: [...tseslint.configs.recommended],
     languageOptions: {
       parserOptions: {
-        project: './tsconfig.app.json',
+        project: './tsconfig.json',
         sourceType: 'module',
+      },
+      globals: {
+        NodeJS: true,
       },
     },
     rules: sharedTsRules,

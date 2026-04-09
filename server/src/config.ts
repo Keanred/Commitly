@@ -1,4 +1,4 @@
-import { loadEnvFile } from "node:process";
+import { loadEnvFile } from 'node:process';
 
 type APIConfig = {
   baseURL: string;
@@ -8,13 +8,13 @@ type APIConfig = {
 
 type DatabaseConfig = {
   dbUrl: string;
-}
+};
 
 type GitHubConfig = {
   clientId: string;
   clientSecret: string;
   syncCooldownMs: number;
-}
+};
 
 type Config = {
   apiServer: APIConfig;

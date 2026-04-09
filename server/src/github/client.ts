@@ -82,7 +82,13 @@ export async function fetchRepoHasReadme(token: string, owner: string, repo: str
  * @param since (optional) ISO date to filter PRs updated after
  * @returns Array of pull request objects
  */
-export async function fetchRepoPullRequests(token: string, owner: string, repo: string, state: string = 'all', since?: string) {
+export async function fetchRepoPullRequests(
+  token: string,
+  owner: string,
+  repo: string,
+  state: string = 'all',
+  since?: string,
+) {
   const params: Record<string, string | number> = { per_page: 100, state };
   if (since) params.since = since;
   return fetchGitHubPaginated(token, `/repos/${owner}/${repo}/pulls`, { params });
@@ -111,7 +117,7 @@ export interface GitHubClientOptions {
 export async function fetchGitHub<T = any>(
   token: string,
   endpoint: string,
-  options: GitHubClientOptions = {}
+  options: GitHubClientOptions = {},
 ): Promise<T> {
   const url = new URL(BASE_URL + endpoint);
   if (options.params) {
@@ -120,8 +126,8 @@ export async function fetchGitHub<T = any>(
   const res = await fetch(url.toString(), {
     method: options.method || 'GET',
     headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/vnd.github+json',
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
       ...options.headers,
     },
     body: options.body ? JSON.stringify(options.body) : undefined,
@@ -153,7 +159,7 @@ export async function fetchGitHub<T = any>(
 export async function fetchGitHubPaginated<T = any>(
   token: string,
   endpoint: string,
-  options: GitHubClientOptions = {}
+  options: GitHubClientOptions = {},
 ): Promise<T[]> {
   let results: T[] = [];
   let url: URL | null = new URL(BASE_URL + endpoint);
@@ -165,8 +171,8 @@ export async function fetchGitHubPaginated<T = any>(
     const res: Response = await fetch(currentUrl, {
       method: options.method || 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github+json',
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
         ...options.headers,
       },
       body: options.body ? JSON.stringify(options.body) : undefined,

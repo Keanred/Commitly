@@ -1,1 +1,1 @@
-export { default } from "./ScoreRing"
+export { default } from './ScoreRing';

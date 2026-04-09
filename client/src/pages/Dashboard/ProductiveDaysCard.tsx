@@ -1,69 +1,61 @@
-import { Box, Typography } from "@mui/material"
-import { alpha, useTheme } from "@mui/material/styles"
-import type { CommitsByDayData } from "../../hooks/useCommitMetrics"
+import { Box, Typography } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
+import type { CommitsByDayData } from '../../hooks/useCommitMetrics';
 
 // Outer pentagon vertices for each weekday (Mon–Fri)
 const OUTER_POINTS = [
-  [50, 5],   // MON – top
-  [95, 35],  // TUE – right
-  [80, 85],  // WED – bottom-right
-  [20, 85],  // THU – bottom-left
-  [5, 35],   // FRI – left
-] as const
+  [50, 5], // MON – top
+  [95, 35], // TUE – right
+  [80, 85], // WED – bottom-right
+  [20, 85], // THU – bottom-left
+  [5, 35], // FRI – left
+] as const;
 
-const CENTER = [50, 49] as const
+const CENTER = [50, 49] as const;
 
 const LABELS = [
-  { text: "MON", top: 0, left: "50%", transform: "translate(-50%, -16px)" },
-  { text: "TUE", top: "25%", right: 0, transform: "translateX(16px)" },
-  { text: "WED", bottom: 0, right: 16, transform: "translateY(16px)" },
-  { text: "THU", bottom: 0, left: 16, transform: "translateY(16px)" },
-  { text: "FRI", top: "25%", left: 0, transform: "translateX(-16px)" },
-] as const
+  { text: 'MON', top: 0, left: '50%', transform: 'translate(-50%, -16px)' },
+  { text: 'TUE', top: '25%', right: 0, transform: 'translateX(16px)' },
+  { text: 'WED', bottom: 0, right: 16, transform: 'translateY(16px)' },
+  { text: 'THU', bottom: 0, left: 16, transform: 'translateY(16px)' },
+  { text: 'FRI', top: '25%', left: 0, transform: 'translateX(-16px)' },
+] as const;
 
 // Day keys in commitByDay (0 = Mon … 4 = Fri)
-const DAY_KEYS = [0, 1, 2, 3, 4]
+const DAY_KEYS = [0, 1, 2, 3, 4];
 
 function buildDataPolygon(commitByDay: Record<number, number>): string {
   return DAY_KEYS.map((key, i) => {
-    const intensity = commitByDay[key] ?? 0
-    const x = CENTER[0] + intensity * (OUTER_POINTS[i][0] - CENTER[0])
-    const y = CENTER[1] + intensity * (OUTER_POINTS[i][1] - CENTER[1])
-    return `${x},${y}`
-  }).join(" ")
+    const intensity = commitByDay[key] ?? 0;
+    const x = CENTER[0] + intensity * (OUTER_POINTS[i][0] - CENTER[0]);
+    const y = CENTER[1] + intensity * (OUTER_POINTS[i][1] - CENTER[1]);
+    return `${x},${y}`;
+  }).join(' ');
 }
 
 type ProductiveDaysCardProps = {
-  commitByDay: CommitsByDayData | null
-}
+  commitByDay: CommitsByDayData | null;
+};
 
 const ProductiveDaysCard = ({ commitByDay }: ProductiveDaysCardProps) => {
-  const theme = useTheme()
-  const dataPoints = commitByDay
-    ? buildDataPolygon(commitByDay.commitByDay)
-    : undefined
+  const theme = useTheme();
+  const dataPoints = commitByDay ? buildDataPolygon(commitByDay.commitByDay) : undefined;
 
   return (
     <Box
       sx={{
-        gridColumn: { xs: "span 12", lg: "span 5" },
-        bgcolor: "surfaceContainer",
+        gridColumn: { xs: 'span 12', lg: 'span 5' },
+        bgcolor: 'surfaceContainer',
         borderRadius: 3,
         p: 3,
       }}
     >
-      <Typography
-        variant="overline"
-        sx={{ color: "onSurfaceVariant", mb: 2, display: "block" }}
-      >
+      <Typography variant="overline" sx={{ color: 'onSurfaceVariant', mb: 2, display: 'block' }}>
         Productive Days
       </Typography>
-      <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-        <Box sx={{ position: "relative", width: 192, height: 192 }}>
-          <svg
-            viewBox="0 0 100 100"
-            style={{ width: "100%", height: "100%" }}
-          >
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+        <Box sx={{ position: 'relative', width: 192, height: 192 }}>
+          <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }}>
             <polygon
               points="50,5 95,35 80,85 20,85 5,35"
               fill="none"
@@ -91,12 +83,12 @@ const ProductiveDaysCard = ({ commitByDay }: ProductiveDaysCardProps) => {
             <Box
               key={text}
               sx={{
-                position: "absolute",
+                position: 'absolute',
                 ...pos,
                 transform,
-                fontSize: "10px",
+                fontSize: '10px',
                 fontWeight: 700,
-                color: "onSurface",
+                color: 'onSurface',
               }}
             >
               {text}
@@ -105,7 +97,7 @@ const ProductiveDaysCard = ({ commitByDay }: ProductiveDaysCardProps) => {
         </Box>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default ProductiveDaysCard
+export default ProductiveDaysCard;

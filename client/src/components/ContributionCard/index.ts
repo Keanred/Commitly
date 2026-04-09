@@ -1,1 +1,1 @@
-export { default } from "./ContributionCard"
+export { default } from './ContributionCard';

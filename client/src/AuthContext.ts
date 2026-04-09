@@ -1,7 +1,6 @@
-import { createContext } from 'react';
-import type { User } from './types/User';
+import { createContext, useContext } from 'react';
 import { fetchUser, logoutUser } from './auth-utils';
-import { useContext } from 'react';
+import type { User } from './types/User';
 
 export interface AuthContextType {
   authUser: User | null;

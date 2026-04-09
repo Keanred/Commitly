@@ -11,9 +11,9 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../client';
 import { queryKeys } from '../queryKeys';
 import {
-  transformCommitsByHour,
-  transformCommitsByDay,
   transformCommitHistory,
+  transformCommitsByDay,
+  transformCommitsByHour,
   type CommitHistoryCell,
   type CommitHistoryData,
 } from '../utils/transforms';
@@ -41,8 +41,6 @@ export interface DashboardData {
   dashboardLoadingStep: string;
   error: Error | null;
 }
-
-
 
 export const useDashboardData = (): DashboardData => {
   const {
