@@ -1,4 +1,5 @@
 import { Request, Response, Router } from 'express';
+import { randomBytes } from 'node:crypto';
 import cfg from '../config';
 import { getUserById, upsertUser } from '../db/queries';
 import { fetchGitHub } from '../github/client';
@@ -33,16 +34,25 @@ async function fetchAndUpsertUser(accessToken: string): Promise<User> {
   });
 }
 
-authRouter.get('/github', (_req: Request, res: Response) => {
+authRouter.get('/github', (req: Request, res: Response) => {
+  const state = randomBytes(16).toString('hex');
+  req.session.oauthState = state;
   const params = new URLSearchParams({
     client_id: cfg.github.clientId,
     scope: 'read:user repo',
+    state,
   });
   res.redirect(`https://github.com/login/oauth/authorize?${params}`);
 });
 
 authRouter.get('/github/callback', async (req: Request, res: Response) => {
-  const { code } = req.query;
+  const { code, state } = req.query;
+
+  if (!state || typeof state !== 'string' || state !== req.session.oauthState) {
+    res.redirect(`${cfg.clientURL}?error=invalid_state`);
+    return;
+  }
+  req.session.oauthState = undefined;
 
   if (!code || typeof code !== 'string') {
     res.redirect(`${cfg.clientURL}?error=missing_code`);

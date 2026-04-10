@@ -1,3 +1,4 @@
+import connectPgSimple from 'connect-pg-simple';
 import express, { NextFunction, Request, Response } from 'express';
 import session from 'express-session';
 import { createServer } from 'http';
@@ -10,17 +11,31 @@ import metricsRouter from './routes/metrics';
 import reposRouter from './routes/repos';
 import summaryRouter from './routes/summary';
 
+const PgSession = connectPgSimple(session);
+
 const app = express();
 const server = createServer(app);
 
 app.use(express.json());
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 app.use(
   session({
+    store: new PgSession({
+      conString: cfg.db.dbUrl,
+      tableName: 'session',
+      createTableIfMissing: true,
+    }),
     secret: cfg.sessionSecret,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }, // set to true in production with HTTPS
+    cookie: {
+      secure: isProduction,
+      sameSite: 'lax',
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    },
   }),
 );
 

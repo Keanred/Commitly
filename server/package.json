@@ -15,6 +15,7 @@
     "format": "prettier --write src/**/*.ts"
   },
   "devDependencies": {
+    "@types/connect-pg-simple": "^7.0.3",
     "@types/express": "^5.0.6",
     "@types/express-session": "^1.18.2",
     "@types/node": "^25.5.0",
@@ -25,6 +26,7 @@
   },
   "dependencies": {
     "@commitly/schemas": "file:../schemas",
+    "connect-pg-simple": "^10.0.0",
     "drizzle-orm": "^0.44.6",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
