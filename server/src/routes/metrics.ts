@@ -15,8 +15,10 @@ import {
   getLanguagesByRepo,
   getPullRequestsByUser,
   getReposByUser,
+  getUserById,
 } from '../db/queries';
 import { getCachedDashboardData, setCachedDashboardData } from '../metrics/dashboardCache';
+import { computeStreak, toIsoDateKey } from '../metrics/streakHelper';
 import type { Branch } from '../types/models';
 
 const metricsRouter = Router();
@@ -24,39 +26,6 @@ const metricsRouter = Router();
 function clampScore(value: number): number {
   if (Number.isNaN(value)) return 0;
   return Math.max(0, Math.min(100, Math.round(value)));
-}
-
-function toIsoDateKey(date: Date): string {
-  return date.toISOString().split('T')[0];
-}
-
-function computeStreak(allCommits: Awaited<ReturnType<typeof getCommitsByUser>>) {
-  const commitDates = Array.from(
-    new Set(allCommits.map((commit) => toIsoDateKey(new Date(commit.committed_at)))),
-  ).sort();
-  let currentStreak = 0;
-  let longestStreak = 0;
-  let previousDate: string | null = null;
-
-  for (const date of commitDates) {
-    if (previousDate) {
-      const diffDays = (new Date(date).getTime() - new Date(previousDate).getTime()) / (1000 * 60 * 60 * 24);
-      if (diffDays === 1) {
-        currentStreak++;
-      } else if (diffDays > 1) {
-        longestStreak = Math.max(longestStreak, currentStreak);
-        currentStreak = 1;
-      }
-    } else {
-      currentStreak = 1;
-    }
-    previousDate = date;
-  }
-
-  return commitStreakResponseSchema.parse({
-    currentStreak,
-    longestStreak: Math.max(longestStreak, currentStreak),
-  });
 }
 
 function computeCommitsByHour(allCommits: Awaited<ReturnType<typeof getCommitsByUser>>) {
@@ -206,14 +175,23 @@ metricsRouter.get('/dashboard', async (req: Request, res: Response) => {
     return res.json(cached);
   }
 
-  const [allCommits, allPRs, repos] = await Promise.all([
-    getCommitsByUser(userId),
-    getPullRequestsByUser(userId),
+  const since = new Date();
+  since.setMonth(since.getMonth() - 13);
+
+  const [allCommits, allPRs, repos, user] = await Promise.all([
+    getCommitsByUser(userId, since),
+    getPullRequestsByUser(userId, since),
     getReposByUser(userId),
+    getUserById(userId),
   ]);
 
+  const { currentStreak, longestStreak } = computeStreak(allCommits);
+
   const data = dashboardMetricsResponseSchema.parse({
-    streak: computeStreak(allCommits),
+    streak: commitStreakResponseSchema.parse({
+      currentStreak,
+      longestStreak: Math.max(longestStreak, user?.longest_streak ?? 0),
+    }),
     commitByHour: computeCommitsByHour(allCommits),
     commitByDay: computeCommitsByDay(allCommits),
     weeklyCommitData: computeWeeklyCommitData(allCommits),
@@ -229,38 +207,22 @@ metricsRouter.get('/dashboard', async (req: Request, res: Response) => {
 
 metricsRouter.get('/commits/streak', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
-  const allCommits = await getCommitsByUser(userId);
-  const commitDates = Array.from(
-    new Set(allCommits.map((commit) => commit.committed_at.toISOString().split('T')[0])),
-  ).sort();
-
-  let currentStreak = 0;
-  let longestStreak = 0;
-  let previousDate: string | null = null;
-
-  for (const date of commitDates) {
-    if (previousDate) {
-      const diffDays = (new Date(date).getTime() - new Date(previousDate).getTime()) / (1000 * 60 * 60 * 24);
-      if (diffDays === 1) {
-        currentStreak++;
-      } else if (diffDays > 1) {
-        longestStreak = Math.max(longestStreak, currentStreak);
-        currentStreak = 1;
-      }
-    } else {
-      currentStreak = 1;
-    }
-    previousDate = date;
-  }
-  longestStreak = Math.max(longestStreak, currentStreak);
-
-  const response = commitStreakResponseSchema.parse({ currentStreak, longestStreak });
+  const since = new Date();
+  since.setMonth(since.getMonth() - 13);
+  const [allCommits, user] = await Promise.all([getCommitsByUser(userId, since), getUserById(userId)]);
+  const { currentStreak, longestStreak } = computeStreak(allCommits);
+  const response = commitStreakResponseSchema.parse({
+    currentStreak,
+    longestStreak: Math.max(longestStreak, user?.longest_streak ?? 0),
+  });
   res.json(response);
 });
 
 metricsRouter.get('/commits/by-hour', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
-  const allCommits = await getCommitsByUser(userId);
+  const since = new Date();
+  since.setMonth(since.getMonth() - 13);
+  const allCommits = await getCommitsByUser(userId, since);
   const hourCounts: { [hour: number]: number } = {};
   for (let i = 0; i < 24; i++) {
     hourCounts[i] = 0;
@@ -276,7 +238,9 @@ metricsRouter.get('/commits/by-hour', async (req: Request, res: Response) => {
 
 metricsRouter.get('/commits/by-day', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
-  const allCommits = await getCommitsByUser(userId);
+  const since = new Date();
+  since.setMonth(since.getMonth() - 13);
+  const allCommits = await getCommitsByUser(userId, since);
   const dayCounts: { [day: number]: number } = {};
   for (let i = 0; i < 7; i++) {
     dayCounts[i] = 0;
@@ -291,7 +255,9 @@ metricsRouter.get('/commits/by-day', async (req: Request, res: Response) => {
 
 metricsRouter.get('/commits/history', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
-  const allCommits = await getCommitsByUser(userId);
+  const since = new Date();
+  since.setMonth(since.getMonth() - 13);
+  const allCommits = await getCommitsByUser(userId, since);
   const today = new Date();
   const pastDate = new Date(today.getTime() - 52 * 7 * 24 * 60 * 60 * 1000);
   const dateCounts: { [date: string]: number } = {};
@@ -309,7 +275,9 @@ metricsRouter.get('/commits/history', async (req: Request, res: Response) => {
 
 metricsRouter.get('/commits/weekly', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
-  const allCommits = await getCommitsByUser(userId);
+  const since = new Date();
+  since.setMonth(since.getMonth() - 13);
+  const allCommits = await getCommitsByUser(userId, since);
   const today = new Date();
   const startOfWeek = new Date(today.getTime() - today.getDay() * 24 * 60 * 60 * 1000);
   const startOfLastWeek = new Date(startOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -333,7 +301,9 @@ metricsRouter.get('/commits/weekly', async (req: Request, res: Response) => {
 
 metricsRouter.get('/prs/weekly', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
-  const allPRs = await getPullRequestsByUser(userId);
+  const since = new Date();
+  since.setMonth(since.getMonth() - 13);
+  const allPRs = await getPullRequestsByUser(userId, since);
   const today = new Date();
   const startOfWeek = new Date(today.getTime() - today.getDay() * 24 * 60 * 60 * 1000);
   const startOfLastWeek = new Date(startOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -358,7 +328,9 @@ metricsRouter.get('/prs/weekly', async (req: Request, res: Response) => {
 
 metricsRouter.get('/quality/weekly', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
-  const allCommits = await getCommitsByUser(userId);
+  const since = new Date();
+  since.setMonth(since.getMonth() - 13);
+  const allCommits = await getCommitsByUser(userId, since);
   const today = new Date();
   const startOfWeek = new Date(today.getTime() - today.getDay() * 24 * 60 * 60 * 1000);
   const startOfLastWeek = new Date(startOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -545,7 +517,9 @@ metricsRouter.get('/global-integrity', async (req: Request, res: Response) => {
   const stalePenalty = Math.min(60, (8 * staleBranches) / Math.max(1, repos.length));
   const branchHygieneScore = clampScore(100 - stalePenalty);
 
-  const allCommits = await getCommitsByUser(userId);
+  const since = new Date();
+  since.setMonth(since.getMonth() - 13);
+  const allCommits = await getCommitsByUser(userId, since);
   const startOfWeek = new Date(now.getTime() - now.getDay() * 24 * 60 * 60 * 1000);
   const thisWeekCommits = allCommits.filter((commit) => new Date(commit.committed_at) >= startOfWeek);
   let qualityScore = 0;

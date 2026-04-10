@@ -1,10 +1,22 @@
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, gte, lt, sql } from 'drizzle-orm';
 import type { PullRequest, PullRequestInsert } from '../../types/models';
 import { db } from '../connection';
 import { pullRequests } from '../schema';
 
-export async function getPullRequestsByUser(userId: number): Promise<PullRequest[]> {
+export async function getPullRequestsByUser(userId: number, since?: Date): Promise<PullRequest[]> {
+  if (since) {
+    return db
+      .select()
+      .from(pullRequests)
+      .where(and(eq(pullRequests.user_id, userId), gte(pullRequests.created_at, since)));
+  }
   return db.select().from(pullRequests).where(eq(pullRequests.user_id, userId));
+}
+
+export async function prunePullRequests(userId: number, cutoffDate: Date): Promise<void> {
+  await db
+    .delete(pullRequests)
+    .where(and(eq(pullRequests.user_id, userId), lt(pullRequests.created_at, cutoffDate)));
 }
 
 export async function insertPullRequests(prs: PullRequestInsert[]): Promise<void> {

@@ -7,6 +7,7 @@ export const users = pgTable('users', {
   name: text('name'),
   avatar_url: text('avatar_url'),
   access_token: text('access_token').notNull(),
+  longest_streak: integer('longest_streak').default(0).notNull(),
   last_synced_at: timestamp('last_synced_at', { withTimezone: true }),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -73,7 +74,6 @@ export const branches = pgTable(
       .references(() => repos.id, { onDelete: 'cascade' })
       .notNull(),
     name: text('name').notNull(),
-    last_commit_sha: text('last_commit_sha'),
     last_commit_date: timestamp('last_commit_date', { withTimezone: true }),
     is_default: boolean('is_default').default(false).notNull(),
     fetched_at: timestamp('fetched_at', { withTimezone: true }).defaultNow().notNull(),

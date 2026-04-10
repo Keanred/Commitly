@@ -1,12 +1,18 @@
 import cfg from '../config';
 import {
+  getCommitsByUser,
+  getUserById,
   insertCommits,
   insertPullRequests,
+  pruneCommits,
+  prunePullRequests,
   updateLastSyncedAt,
+  updateLongestStreak,
   upsertBranch,
   upsertLanguage,
   upsertRepo,
 } from '../db/queries';
+import { computeStreak } from '../metrics/streakHelper';
 import type { User } from '../types/models';
 import {
   fetchRepoBranches,
@@ -70,7 +76,6 @@ export async function syncUserData(user: User, accessToken: string): Promise<voi
         await upsertBranch({
           repo_id: repo.id,
           name: branch.name,
-          last_commit_sha: branch.commit?.sha ?? null,
           last_commit_date: lastCommitDate,
           is_default: branch.name === repo.default_branch,
         });
@@ -88,4 +93,17 @@ export async function syncUserData(user: User, accessToken: string): Promise<voi
   }
 
   await updateLastSyncedAt(user.id);
+
+  // Persist longest streak before pruning so historical record is never lost
+  const allCommits = await getCommitsByUser(user.id);
+  const { longestStreak } = computeStreak(allCommits);
+  const currentUser = await getUserById(user.id);
+  if (longestStreak > (currentUser?.longest_streak ?? 0)) {
+    await updateLongestStreak(user.id, longestStreak);
+  }
+
+  // Prune rows outside the 13-month retention window
+  const cutoffDate = new Date();
+  cutoffDate.setMonth(cutoffDate.getMonth() - 13);
+  await Promise.all([pruneCommits(user.id, cutoffDate), prunePullRequests(user.id, cutoffDate)]);
 }

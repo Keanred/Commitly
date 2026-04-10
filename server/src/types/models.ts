@@ -5,6 +5,7 @@ export interface User {
   name: string | null;
   avatar_url: string | null;
   access_token: string;
+  longest_streak: number;
   last_synced_at: Date | null;
   created_at: Date;
   updated_at: Date;
@@ -45,7 +46,6 @@ export interface Branch {
   id: number;
   repo_id: number;
   name: string;
-  last_commit_sha: string | null;
   last_commit_date: Date | null;
   is_default: boolean;
   fetched_at: Date;

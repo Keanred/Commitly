@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, gte, lt } from 'drizzle-orm';
 import type { Commit, CommitInsert } from '../../types/models';
 import { db } from '../connection';
 import { commits as commitsTable } from '../schema';
@@ -7,8 +7,20 @@ export async function getCommitsByRepo(repoId: number): Promise<Commit[]> {
   return db.select().from(commitsTable).where(eq(commitsTable.repo_id, repoId));
 }
 
-export async function getCommitsByUser(userId: number): Promise<Commit[]> {
+export async function getCommitsByUser(userId: number, since?: Date): Promise<Commit[]> {
+  if (since) {
+    return db
+      .select()
+      .from(commitsTable)
+      .where(and(eq(commitsTable.user_id, userId), gte(commitsTable.committed_at, since)));
+  }
   return db.select().from(commitsTable).where(eq(commitsTable.user_id, userId));
+}
+
+export async function pruneCommits(userId: number, cutoffDate: Date): Promise<void> {
+  await db
+    .delete(commitsTable)
+    .where(and(eq(commitsTable.user_id, userId), lt(commitsTable.committed_at, cutoffDate)));
 }
 
 export async function insertCommits(commits: CommitInsert[]): Promise<void> {

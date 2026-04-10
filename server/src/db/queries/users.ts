@@ -20,6 +20,10 @@ export async function updateLastSyncedAt(userId: number): Promise<void> {
     .where(eq(users.id, userId));
 }
 
+export async function updateLongestStreak(userId: number, value: number): Promise<void> {
+  await db.update(users).set({ longest_streak: value }).where(eq(users.id, userId));
+}
+
 export async function upsertUser(user: UserInsert): Promise<User> {
   const [result] = await db
     .insert(users)

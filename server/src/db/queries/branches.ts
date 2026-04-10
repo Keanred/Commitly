@@ -13,7 +13,6 @@ export async function upsertBranch(branch: BranchInsert): Promise<Branch> {
     .values({
       repo_id: branch.repo_id,
       name: branch.name,
-      last_commit_sha: branch.last_commit_sha ?? null,
       last_commit_date: branch.last_commit_date ?? null,
       is_default: branch.is_default,
       fetched_at: sql`now()`,
@@ -21,7 +20,6 @@ export async function upsertBranch(branch: BranchInsert): Promise<Branch> {
     .onConflictDoUpdate({
       target: [branches.repo_id, branches.name],
       set: {
-        last_commit_sha: branch.last_commit_sha ?? null,
         last_commit_date: branch.last_commit_date ?? null,
         is_default: branch.is_default,
         fetched_at: sql`now()`,
