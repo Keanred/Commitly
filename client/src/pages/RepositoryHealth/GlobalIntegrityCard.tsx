@@ -3,14 +3,14 @@ import ScoreRing from '../../components/ScoreRing';
 import { useGlobalIntegrity } from '../../hooks/useRepoMetrics';
 
 const GlobalIntegrityCard = () => {
-  const { data, loading, error } = useGlobalIntegrity();
-  const score = data?.score ?? 0;
+  const { data: globalIntegrityData, loading: isLoading, error: isError } = useGlobalIntegrity();
+  const score = globalIntegrityData?.score ?? 0;
 
   let summary = 'Loading repository health metrics...';
-  if (error) {
+  if (isError) {
     summary = 'Unable to load integrity metrics right now.';
-  } else if (data) {
-    summary = data.summary;
+  } else if (globalIntegrityData) {
+    summary = globalIntegrityData.summary;
   }
 
   return (
@@ -51,7 +51,7 @@ const GlobalIntegrityCard = () => {
               letterSpacing: '-0.04em',
             }}
           >
-            {loading ? '--' : score}
+            {isLoading ? '--' : score}
           </Typography>
           <Typography
             sx={{

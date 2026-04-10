@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "dev": "just dev",
-    "dev:down": "just dev-down",
+    "dev:down": "just db-down",
     "dev:clean": "just dev-clean",
     "build": "just build",
     "test": "just test",

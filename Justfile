@@ -8,7 +8,7 @@ install:
 
 # Full local dev flow with interrupt-safe cleanup.
 dev:
-  @bash -c 'cleanup(){ just dev-clean >/dev/null 2>&1 || true; just dev-down >/dev/null 2>&1 || true; }; trap cleanup INT TERM EXIT; just dev-stack'
+  @bash -c 'cleanup(){ just dev-clean >/dev/null 2>&1 || true; just db-down >/dev/null 2>&1 || true; }; trap cleanup INT TERM EXIT; just dev-stack'
 
 # Bring up DB, wait until ready, run migrations, then run client+server in parallel.
 dev-stack:
@@ -40,8 +40,6 @@ db-reset:
 db-shell:
   docker compose exec postgres psql -U postgres -d commitly
 
-gen: gen-schemas
-
 db-generate:
   npm run db:generate --workspace=server
 
@@ -54,34 +52,11 @@ dev-server:
 dev-client:
   npm run dev --workspace=client
 
-dev-server-build:
-  npm run build --workspace=server
-
-dev-client-build:
-  npm run build --workspace=client
-
-dev-server-test:
-  npm run test --workspace=server
-
-dev-server-lint:
-  npm run lint --workspace=server
-
-dev-client-lint:
-  npm run lint --workspace=client
-
 dev-clean:
   @bash -c "pkill -f '[t]sx watch src/main.ts' || true; pkill -f '[v]ite' || true"
 
 db-down:
   docker compose stop postgres
-
-dev-down: db-down
-
-dev-db-up: db-up
-
-dev-db-wait: db-wait
-
-dev-db-init: db-migrate
 
 build:
   npm run build --workspaces
