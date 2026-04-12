@@ -97,7 +97,7 @@ const Header = ({ avatarUrl }: HeaderProps) => {
           size="small"
           onClick={async () => {
             await logout();
-            router.navigate({ to: '/' });
+            await router.navigate({ to: '/' });
           }}
         >
           Logout

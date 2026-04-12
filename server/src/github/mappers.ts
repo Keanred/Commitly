@@ -1,6 +1,7 @@
 import type { CommitInsert, PullRequestInsert, RepoInsert } from '../types/models';
+import type { GitHubCommit, GitHubPullRequest, GitHubRepo } from './client';
 
-export function mapGitHubRepo(userId: number, repo: any, hasReadme: boolean): RepoInsert {
+export function mapGitHubRepo(userId: number, repo: GitHubRepo, hasReadme: boolean): RepoInsert {
   return {
     user_id: userId,
     github_id: repo.id,
@@ -19,7 +20,8 @@ export function mapGitHubRepo(userId: number, repo: any, hasReadme: boolean): Re
   };
 }
 
-export function mapGitHubCommit(userId: number, repoId: number, commit: any): CommitInsert {
+// eslint-disable-next-line complexity
+export function mapGitHubCommit(userId: number, repoId: number, commit: GitHubCommit): CommitInsert {
   return {
     user_id: userId,
     repo_id: repoId,
@@ -31,7 +33,7 @@ export function mapGitHubCommit(userId: number, repoId: number, commit: any): Co
   };
 }
 
-export function mapGitHubPullRequest(userId: number, repoId: number, pr: any): PullRequestInsert {
+export function mapGitHubPullRequest(userId: number, repoId: number, pr: GitHubPullRequest): PullRequestInsert {
   return {
     user_id: userId,
     repo_id: repoId,

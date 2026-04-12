@@ -12,7 +12,10 @@ const WeeklyDigest = () => {
       <Box component="section" sx={{ mb: 6 }}>
         <SectionHeader
           title="Weekly Narrative Digest"
-          subtitle="March 11 — March 17, 2024. An algorithmic reconstruction of your engineering velocity and architectural impact."
+          subtitle={
+            'March 11 — March 17, 2024. An algorithmic reconstruction of your engineering velocity ' +
+            'and architectural impact.'
+          }
         />
       </Box>
       <Box

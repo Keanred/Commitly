@@ -1,6 +1,6 @@
 import {
   dashboardMetricsResponseSchema,
-  type ActiveReposResponse,
+  type ActiveRepo,
   type CommitStreakResponse,
   type CommitsByDayResponse,
   type CommitsByHourResponse,
@@ -18,44 +18,39 @@ import {
   type CommitHistoryData,
 } from '../utils/transforms';
 
-export type CommitStreakData = CommitStreakResponse;
-export type CommitsByHourData = CommitsByHourResponse;
-export type CommitsByDayData = CommitsByDayResponse;
-export type WeeklyCommitData = WeeklyDeltaResponse;
-export type WeeklyPRData = WeeklyDeltaResponse;
-export type WeeklyQualityData = WeeklyDeltaResponse;
-export type ActiveRepoData = ActiveReposResponse[number];
 export type { CommitHistoryCell, CommitHistoryData };
 
 export interface DashboardData {
-  streak: CommitStreakData | null;
-  commitByHour: CommitsByHourData | null;
-  commitByDay: CommitsByDayData | null;
-  weeklyCommitData: WeeklyCommitData | null;
-  weeklyPRData: WeeklyPRData | null;
-  weeklyQualityData: WeeklyQualityData | null;
+  streak: CommitStreakResponse | null;
+  commitByHour: CommitsByHourResponse | null;
+  commitByDay: CommitsByDayResponse | null;
+  weeklyCommitData: WeeklyDeltaResponse | null;
+  weeklyPRData: WeeklyDeltaResponse | null;
+  weeklyQualityData: WeeklyDeltaResponse | null;
   commitHistory: CommitHistoryData | null;
-  activeRepos: ActiveRepoData[] | null;
+  activeRepos: ActiveRepo[] | null;
   isDashboardLoading: boolean;
   dashboardLoadProgress: number;
   dashboardLoadingStep: string;
   error: Error | null;
 }
 
+// eslint-disable-next-line complexity
 export const useDashboardData = (): DashboardData => {
   const {
     data: dashboardData,
-    isLoading,
+    isPending,
     isFetching,
     error,
   } = useQuery({
-    queryKey: [queryKeys.metrics.dashboard],
+    queryKey: queryKeys.metrics.dashboard,
     queryFn: async () => {
       const response = await api<DashboardMetricsResponse>('/api/v1/metrics/dashboard');
       return dashboardMetricsResponseSchema.parse(response);
     },
     staleTime: 60_000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    throwOnError: true,
     retry: 1,
   });
 
@@ -68,9 +63,23 @@ export const useDashboardData = (): DashboardData => {
   const commitHistory = dashboardData ? transformCommitHistory(dashboardData.commitHistory) : null;
   const activeRepos = dashboardData?.activeRepos ?? null;
 
-  const isDashboardLoading = isFetching && !isLoading;
-  const dashboardLoadProgress = dashboardData ? 100 : isLoading ? 65 : 100;
-  const dashboardLoadingStep = dashboardData ? 'Finalizing dashboard' : 'Loading dashboard snapshot';
+  const isDashboardLoading = !dashboardData && (isPending || isFetching);
+
+  let dashboardLoadProgress = 100;
+  let dashboardLoadingStep = 'Finalizing dashboard';
+
+  if (!dashboardData) {
+    if (isPending) {
+      dashboardLoadProgress = 35;
+      dashboardLoadingStep = 'Fetching dashboard snapshot';
+    } else if (isFetching) {
+      dashboardLoadProgress = 75;
+      dashboardLoadingStep = 'Processing dashboard metrics';
+    } else {
+      dashboardLoadProgress = 0;
+      dashboardLoadingStep = 'Preparing dashboard data';
+    }
+  }
 
   return {
     streak,

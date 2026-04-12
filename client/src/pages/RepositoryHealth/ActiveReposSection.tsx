@@ -1,12 +1,13 @@
+import type { ActiveRepo } from '@commitly/schemas';
 import { Box, Typography } from '@mui/material';
 import HealthRepoCard from '../../components/HealthRepoCard';
-import type { ActiveRepoData } from '../../hooks/useRepoMetrics';
 
 interface ActiveReposSectionProps {
-  repos: ActiveRepoData[];
+  repos: ActiveRepo[];
   loading?: boolean;
 }
 
+// eslint-disable-next-line complexity
 const languageIcon = (language: string | null): string => {
   switch (language?.toLowerCase()) {
     case 'typescript':
@@ -38,7 +39,7 @@ const languageIcon = (language: string | null): string => {
   }
 };
 
-const healthPercentByStatus: Record<ActiveRepoData['status'], number> = {
+const healthPercentByStatus: Record<ActiveRepo['status'], number> = {
   healthy: 92,
   maintenance: 64,
   failing: 28,
@@ -80,14 +81,24 @@ const ActiveReposSection = ({ repos, loading = false }: ActiveReposSectionProps)
         View All
       </Typography>
     </Box>
-    {loading ? (
-      <Typography sx={{ color: 'onSurfaceVariant', fontSize: '0.875rem' }}>Loading repository activity...</Typography>
-    ) : repos.length === 0 ? (
-      <Typography sx={{ color: 'onSurfaceVariant', fontSize: '0.875rem' }}>
-        No repositories matched the selected filters.
-      </Typography>
-    ) : (
-      repos.map((repo) => (
+    {(() => {
+      if (loading) {
+        return (
+          <Typography sx={{ color: 'onSurfaceVariant', fontSize: '0.875rem' }}>
+            Loading repository activity...
+          </Typography>
+        );
+      }
+
+      if (repos.length === 0) {
+        return (
+          <Typography sx={{ color: 'onSurfaceVariant', fontSize: '0.875rem' }}>
+            No repositories matched the selected filters.
+          </Typography>
+        );
+      }
+
+      return repos.map((repo) => (
         <HealthRepoCard
           key={repo.name}
           icon={languageIcon(repo.language)}
@@ -96,8 +107,8 @@ const ActiveReposSection = ({ repos, loading = false }: ActiveReposSectionProps)
           lastCommit={`Last commit: ${repo.lastActivity}`}
           healthPercent={healthPercentByStatus[repo.status]}
         />
-      ))
-    )}
+      ));
+    })()}
   </Box>
 );
 

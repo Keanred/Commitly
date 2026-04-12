@@ -6,8 +6,11 @@ import {
   type FetchCommitsResponse,
   type FetchLanguagesResponse,
 } from '@commitly/schemas';
-import { useCallback, useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { useState } from 'react';
 import { api } from '../client';
+import { queryClient } from '../queryClient';
+import { queryKeys } from '../queryKeys';
 
 export type SyncStep = 'repos' | 'commits' | 'languages' | 'branches';
 
@@ -18,9 +21,7 @@ export interface SyncProgress {
   totalLanguages: number;
   totalBranches: number;
 }
-
 export const useSyncData = () => {
-  const [syncing, setSyncing] = useState(false);
   const [progress, setProgress] = useState<SyncProgress>({
     currentStep: null,
     completedSteps: [],
@@ -28,15 +29,10 @@ export const useSyncData = () => {
     totalLanguages: 0,
     totalBranches: 0,
   });
-  const [error, setError] = useState<Error | null>(null);
 
-  const sync = useCallback(async () => {
-    setSyncing(true);
-    setError(null);
-    setProgress({ currentStep: null, completedSteps: [], totalCommits: 0, totalLanguages: 0, totalBranches: 0 });
-
-    try {
-      setProgress((p) => ({ ...p, currentStep: 'repos' }));
+  const mutation = useMutation({
+    mutationFn: async () => {
+      setProgress({ currentStep: 'repos', completedSteps: [], totalCommits: 0, totalLanguages: 0, totalBranches: 0 });
       await api('/api/v1/repos/fetch');
       setProgress((p) => ({ ...p, currentStep: 'commits', completedSteps: [...p.completedSteps, 'repos'] }));
 
@@ -66,12 +62,14 @@ export const useSyncData = () => {
         completedSteps: [...p.completedSteps, 'branches'],
         totalBranches: parsedBranches.totalBranches,
       }));
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
-    } finally {
-      setSyncing(false);
-    }
-  }, []);
+    },
+    onSuccess: async () => {
+      setProgress((p) => ({ ...p, currentStep: null }));
+      await queryClient.invalidateQueries({ queryKey: queryKeys.metrics.dashboard });
+      await queryClient.invalidateQueries({ queryKey: ['metrics'] });
+      await queryClient.invalidateQueries({ queryKey: ['summary'] });
+    },
+  });
 
-  return { sync, syncing, progress, error };
+  return { sync: mutation.mutate, syncing: mutation.isPending, progress, error: mutation.error };
 };

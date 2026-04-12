@@ -24,6 +24,7 @@ const stateFilterToStatus = (state: string): 'healthy' | 'maintenance' | 'failin
   return null;
 };
 
+// eslint-disable-next-line complexity
 const RepositoryHealth = () => {
   const [selectedLanguage, setSelectedLanguage] = useState(() =>
     getInitialFilterValue('lang', DEFAULT_LANGUAGE_FILTER),

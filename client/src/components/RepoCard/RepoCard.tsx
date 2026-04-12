@@ -1,19 +1,18 @@
+import type { ActiveRepoStatus } from '@commitly/schemas';
 import { Box, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import Icon from '../Icon';
 
-type RepoStatus = 'healthy' | 'maintenance' | 'failing';
-
 interface RepoCardProps {
   icon: string;
-  status: RepoStatus;
+  status: ActiveRepoStatus;
   name: string;
   description: string;
   branch: string;
   lastActivity: string;
 }
 
-const statusConfig: Record<RepoStatus, { label: string; bgcolor: string; color: string }> = {
+const statusConfig: Record<ActiveRepoStatus, { label: string; bgcolor: string; color: string }> = {
   healthy: {
     label: 'Healthy',
     bgcolor: 'tertiaryContainer',

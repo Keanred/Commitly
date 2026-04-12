@@ -3,110 +3,57 @@ import {
   globalIntegrityResponseSchema,
   repoLanguagesResponseSchema,
   staleBranchesResponseSchema,
-  type ActiveRepo,
-  type ActiveRepoStatus,
+  type ActiveReposResponse,
   type GlobalIntegrityResponse,
   type RepoLanguagesResponse,
-  type StaleBranchEntry,
+  type StaleBranchesResponse,
 } from '@commitly/schemas';
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../client';
-
-export type RepoStatus = ActiveRepoStatus;
-
-export type ActiveRepoData = ActiveRepo;
-
-export type RepoLanguagesData = RepoLanguagesResponse;
-
-export type StaleBranchesData = Record<string, StaleBranchEntry[]>;
-
-export type GlobalIntegrityData = GlobalIntegrityResponse;
-
-let cachedActiveRepos: ActiveRepoData[] | null = null;
-let cachedGlobalIntegrity: GlobalIntegrityData | null = null;
-let cachedRepoLanguages: RepoLanguagesData | null = null;
-let cachedStaleBranches: StaleBranchesData | null = null;
+import { queryKeys } from '../queryKeys';
 
 export const useActiveRepos = () => {
-  const [data, setData] = useState<ActiveRepoData[] | null>(cachedActiveRepos);
-  const [loading, setLoading] = useState(!cachedActiveRepos);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    if (cachedActiveRepos) return;
-
-    api<ActiveRepoData[]>('/api/v1/metrics/repos')
-      .then((response) => {
-        const parsed = activeReposResponseSchema.parse(response);
-        cachedActiveRepos = parsed;
-        setData(parsed);
-      })
-      .catch(setError)
-      .finally(() => setLoading(false));
-  }, []);
-
-  return { data, loading, error };
+  return useQuery({
+    queryKey: queryKeys.metrics.activeRepos,
+    staleTime: 5 * 60_000,
+    throwOnError: true,
+    queryFn: async () => {
+      const response = await api<ActiveReposResponse>('/api/v1/metrics/repos');
+      return activeReposResponseSchema.parse(response);
+    },
+  });
 };
 
 export const useGlobalIntegrity = () => {
-  const [data, setData] = useState<GlobalIntegrityData | null>(cachedGlobalIntegrity);
-  const [loading, setLoading] = useState(!cachedGlobalIntegrity);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    if (cachedGlobalIntegrity) return;
-
-    api<GlobalIntegrityData>('/api/v1/metrics/global-integrity')
-      .then((response) => {
-        const parsed = globalIntegrityResponseSchema.parse(response);
-        cachedGlobalIntegrity = parsed;
-        setData(parsed);
-      })
-      .catch(setError)
-      .finally(() => setLoading(false));
-  }, []);
-
-  return { data, loading, error };
+  return useQuery({
+    queryKey: queryKeys.metrics.globalIntegrity,
+    throwOnError: true,
+    queryFn: async () => {
+      const response = await api<GlobalIntegrityResponse>('/api/v1/metrics/global-integrity');
+      return globalIntegrityResponseSchema.parse(response);
+    },
+  });
 };
 
-export const useRepoLanguages = () => {
-  const [data, setData] = useState<RepoLanguagesData | null>(cachedRepoLanguages);
-  const [loading, setLoading] = useState(!cachedRepoLanguages);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    if (cachedRepoLanguages) return;
-
-    api<RepoLanguagesData>('/api/v1/metrics/repos/languages')
-      .then((response) => {
-        const parsed = repoLanguagesResponseSchema.parse(response);
-        cachedRepoLanguages = parsed;
-        setData(parsed);
-      })
-      .catch(setError)
-      .finally(() => setLoading(false));
-  }, []);
-
-  return { data, loading, error };
+export const useRepoLanguanges = () => {
+  return useQuery({
+    queryKey: queryKeys.metrics.repoLanguages,
+    throwOnError: true,
+    queryFn: async () => {
+      const response = await api<RepoLanguagesResponse>('/api/v1/metrics/repos/languages');
+      return repoLanguagesResponseSchema.parse(response);
+    },
+  });
 };
 
 export const useStaleBranches = () => {
-  const [data, setData] = useState<StaleBranchesData | null>(cachedStaleBranches);
-  const [loading, setLoading] = useState(!cachedStaleBranches);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    if (cachedStaleBranches) return;
-
-    api<StaleBranchesData>('/api/v1/metrics/repos/stale-branches')
-      .then((response) => {
-        const parsed = staleBranchesResponseSchema.parse(response);
-        cachedStaleBranches = parsed;
-        setData(parsed);
-      })
-      .catch(setError)
-      .finally(() => setLoading(false));
-  }, []);
-
-  return { data, loading, error };
+  return useQuery({
+    queryKey: queryKeys.metrics.staleBranches,
+    staleTime: 5 * 60_000,
+    throwOnError: true,
+    queryFn: async () => {
+      const response = await api<StaleBranchesResponse>('/api/v1/metrics/repos/stale-branches');
+      return staleBranchesResponseSchema.parse(response);
+    },
+  });
 };

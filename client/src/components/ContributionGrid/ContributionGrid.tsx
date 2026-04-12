@@ -46,6 +46,7 @@ const ContributionGrid = ({ cells }: ContributionGridProps) => {
     return null;
   }
 
+  // eslint-disable-next-line complexity
   const { weeks, monthLabelByColumn } = useMemo(() => {
     const sorted = [...cells].sort((a, b) => a.date.localeCompare(b.date));
     const cellMap = new Map(sorted.map((cell) => [cell.date, cell]));

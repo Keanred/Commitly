@@ -10,7 +10,11 @@ const PredictiveOutlookCard = () => {
     <Box
       sx={{
         gridColumn: { xs: 'span 12', lg: 'span 5' },
-        background: `linear-gradient(135deg, ${theme.palette.surfaceContainer}, ${theme.palette.surfaceContainerLowest})`,
+        background: `linear-gradient(
+          135deg,
+          ${theme.palette.surfaceContainer},
+          ${theme.palette.surfaceContainerLowest}
+        )`,
         p: 4,
         borderRadius: 3,
         position: 'relative',

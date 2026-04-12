@@ -12,7 +12,7 @@ const AppInner = () => {
 
   useEffect(() => {
     if (!auth.authLoading) {
-      router.invalidate();
+      void router.invalidate();
     }
   }, [auth.authLoading]);
 

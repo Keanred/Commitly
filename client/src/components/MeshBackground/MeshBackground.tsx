@@ -19,8 +19,11 @@ const MeshBackground = ({ children }: MeshBackgroundProps) => {
         overflow: 'hidden',
         px: 3,
         py: 6,
-        backgroundImage: (theme) =>
-          `radial-gradient(at 0% 0%, ${alpha(theme.palette.onPrimaryContainer, 0.1)} 0, transparent 50%), radial-gradient(at 100% 100%, ${alpha(theme.palette.tertiary.main, 0.05)} 0, transparent 50%)`,
+        backgroundImage: (theme) => {
+          const start = `radial-gradient(at 0% 0%, ${alpha(theme.palette.onPrimaryContainer, 0.1)} 0, transparent 50%)`;
+          const end = `radial-gradient(at 100% 100%, ${alpha(theme.palette.tertiary.main, 0.05)} 0, transparent 50%)`;
+          return `${start}, ${end}`;
+        },
       }}
     >
       <Box sx={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: 0.2 }}>

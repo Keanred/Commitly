@@ -1,10 +1,11 @@
+import type { CommitStreakResponse } from '@commitly/schemas';
 import { Box, Typography } from '@mui/material';
 import ContributionGrid from '../../components/ContributionGrid';
 import Icon from '../../components/Icon';
-import type { CommitHistoryData, CommitStreakData } from '../../hooks/useCommitMetrics';
+import type { CommitHistoryData } from '../../hooks/useCommitMetrics';
 
 type CommitStreakCardProps = {
-  commitStreak: CommitStreakData | null;
+  commitStreak: CommitStreakResponse | null;
   commitHistory: CommitHistoryData | null;
 };
 

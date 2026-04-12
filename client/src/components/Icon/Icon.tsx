@@ -8,21 +8,28 @@ interface IconProps {
   sx?: SxProps<Theme>;
 }
 
-const Icon = ({ name, filled, className, sx }: IconProps) => (
-  <Box
-    component="span"
-    className={`material-symbols-outlined${className ? ` ${className}` : ''}`}
-    sx={[
-      {
-        verticalAlign: 'middle',
-        lineHeight: 1,
-        ...(filled ? { fontVariationSettings: "'FILL' 1" } : {}),
-      },
-      ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
-    ]}
-  >
-    {name}
-  </Box>
-);
+const Icon = ({ name, filled, className, sx }: IconProps) => {
+  const normalizedSx = Array.isArray(sx) ? sx : [];
+  if (!Array.isArray(sx) && sx) {
+    normalizedSx.push(sx);
+  }
+
+  return (
+    <Box
+      component="span"
+      className={`material-symbols-outlined${className ? ` ${className}` : ''}`}
+      sx={[
+        {
+          verticalAlign: 'middle',
+          lineHeight: 1,
+          ...(filled ? { fontVariationSettings: "'FILL' 1" } : {}),
+        },
+        ...normalizedSx,
+      ]}
+    >
+      {name}
+    </Box>
+  );
+};
 
 export default Icon;

@@ -13,7 +13,7 @@ export default defineConfig([
     extends: [...tseslint.configs.recommended],
     languageOptions: {
       parserOptions: {
-        project: './tsconfig.app.json',
+        project: ['./tsconfig.app.json', './tsconfig.node.json'],
         sourceType: 'module',
       },
     },

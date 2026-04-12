@@ -18,9 +18,7 @@ export async function getCommitsByUser(userId: number, since?: Date): Promise<Co
 }
 
 export async function pruneCommits(userId: number, cutoffDate: Date): Promise<void> {
-  await db
-    .delete(commitsTable)
-    .where(and(eq(commitsTable.user_id, userId), lt(commitsTable.committed_at, cutoffDate)));
+  await db.delete(commitsTable).where(and(eq(commitsTable.user_id, userId), lt(commitsTable.committed_at, cutoffDate)));
 }
 
 export async function insertCommits(commits: CommitInsert[]): Promise<void> {

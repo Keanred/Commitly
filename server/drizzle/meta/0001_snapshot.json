@@ -75,12 +75,8 @@
           "name": "branches_repo_id_repos_id_fk",
           "tableFrom": "branches",
           "tableTo": "repos",
-          "columnsFrom": [
-            "repo_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["repo_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -90,10 +86,7 @@
         "branches_repo_id_name_unique": {
           "name": "branches_repo_id_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "repo_id",
-            "name"
-          ]
+          "columns": ["repo_id", "name"]
         }
       },
       "policies": {},
@@ -205,12 +198,8 @@
           "name": "commits_user_id_users_id_fk",
           "tableFrom": "commits",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -218,12 +207,8 @@
           "name": "commits_repo_id_repos_id_fk",
           "tableFrom": "commits",
           "tableTo": "repos",
-          "columnsFrom": [
-            "repo_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["repo_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -233,10 +218,7 @@
         "commits_repo_id_sha_unique": {
           "name": "commits_repo_id_sha_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "repo_id",
-            "sha"
-          ]
+          "columns": ["repo_id", "sha"]
         }
       },
       "policies": {},
@@ -302,12 +284,8 @@
           "name": "languages_repo_id_repos_id_fk",
           "tableFrom": "languages",
           "tableTo": "repos",
-          "columnsFrom": [
-            "repo_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["repo_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -317,10 +295,7 @@
         "languages_repo_id_language_unique": {
           "name": "languages_repo_id_language_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "repo_id",
-            "language"
-          ]
+          "columns": ["repo_id", "language"]
         }
       },
       "policies": {},
@@ -449,12 +424,8 @@
           "name": "pull_requests_user_id_users_id_fk",
           "tableFrom": "pull_requests",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -462,12 +433,8 @@
           "name": "pull_requests_repo_id_repos_id_fk",
           "tableFrom": "pull_requests",
           "tableTo": "repos",
-          "columnsFrom": [
-            "repo_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["repo_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -477,10 +444,7 @@
         "pull_requests_repo_id_github_id_unique": {
           "name": "pull_requests_repo_id_github_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "repo_id",
-            "github_id"
-          ]
+          "columns": ["repo_id", "github_id"]
         }
       },
       "policies": {},
@@ -636,12 +600,8 @@
           "name": "repos_user_id_users_id_fk",
           "tableFrom": "repos",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -651,10 +611,7 @@
         "repos_user_id_github_id_unique": {
           "name": "repos_user_id_github_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "github_id"
-          ]
+          "columns": ["user_id", "github_id"]
         }
       },
       "policies": {},
@@ -729,9 +686,7 @@
         "users_github_id_unique": {
           "name": "users_github_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "github_id"
-          ]
+          "columns": ["github_id"]
         }
       },
       "policies": {},
@@ -808,12 +763,8 @@
           "name": "weekly_summaries_user_id_users_id_fk",
           "tableFrom": "weekly_summaries",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -823,10 +774,7 @@
         "weekly_summaries_user_id_week_start_unique": {
           "name": "weekly_summaries_user_id_week_start_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "week_start"
-          ]
+          "columns": ["user_id", "week_start"]
         }
       },
       "policies": {},

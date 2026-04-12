@@ -3,6 +3,7 @@ import type { CommitHistoryResponse, CommitsByDayResponse, CommitsByHourResponse
 export type CommitHistoryCell = { date: string; count: number; intensity: number };
 export type CommitHistoryData = CommitHistoryCell[];
 
+// eslint-disable-next-line complexity
 export function transformCommitsByHour(response: CommitsByHourResponse): CommitsByHourResponse {
   const hourCounts = response.commitByHour;
   const blocks = [

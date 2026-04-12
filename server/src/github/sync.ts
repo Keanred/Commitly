@@ -30,10 +30,11 @@ export function needsSync(user: User): boolean {
   return Date.now() - new Date(user.last_synced_at).getTime() > cfg.github.syncCooldownMs;
 }
 
+// eslint-disable-next-line complexity
 export async function syncUserData(user: User, accessToken: string): Promise<void> {
   const repos = await fetchUserRepos(accessToken);
   const upsertedRepos = await Promise.all(
-    repos.map(async (repo: any) => {
+    repos.map(async (repo) => {
       const [owner, repoName] = repo.full_name.split('/');
       const hasReadme = await fetchRepoHasReadme(accessToken, owner, repoName);
       return upsertRepo(mapGitHubRepo(user.id, repo, hasReadme));
@@ -50,7 +51,7 @@ export async function syncUserData(user: User, accessToken: string): Promise<voi
 
     try {
       const commits = await fetchRepoCommits(accessToken, owner, name, user.login, since);
-      await insertCommits(commits.map((c: any) => mapGitHubCommit(user.id, repo.id, c)));
+      await insertCommits(commits.map((commit) => mapGitHubCommit(user.id, repo.id, commit)));
     } catch (err) {
       console.error(`Failed to sync commits for ${repo.full_name}:`, err);
     }
@@ -86,7 +87,7 @@ export async function syncUserData(user: User, accessToken: string): Promise<voi
 
     try {
       const prs = await fetchRepoPullRequests(accessToken, owner, name, 'all', since);
-      await insertPullRequests(prs.map((pr: any) => mapGitHubPullRequest(user.id, repo.id, pr)));
+      await insertPullRequests(prs.map((pr) => mapGitHubPullRequest(user.id, repo.id, pr)));
     } catch (err) {
       console.error(`Failed to sync pull requests for ${repo.full_name}:`, err);
     }

@@ -17,7 +17,7 @@ const BarChart = ({ bars, height = 64, color = 'tertiary.main', activeIndices }:
   <Box>
     <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1, height }}>
       {bars.map((bar, i) => {
-        const isActive = activeIndices == null || activeIndices.includes(i);
+        const isActive = activeIndices === null || activeIndices === undefined || activeIndices.includes(i);
         return (
           <Box
             key={i}
@@ -25,12 +25,12 @@ const BarChart = ({ bars, height = 64, color = 'tertiary.main', activeIndices }:
               width: '100%',
               height: `${bar.value}%`,
               bgcolor: (theme) => {
-                const resolved =
-                  color === 'tertiary.main'
-                    ? theme.palette.tertiary.main
-                    : color === 'primary.main'
-                      ? theme.palette.primary.main
-                      : color;
+                let resolved = color;
+                if (color === 'tertiary.main') {
+                  resolved = theme.palette.tertiary.main;
+                } else if (color === 'primary.main') {
+                  resolved = theme.palette.primary.main;
+                }
                 return isActive ? resolved : alpha(resolved, 0.2);
               },
               borderTopLeftRadius: 2,

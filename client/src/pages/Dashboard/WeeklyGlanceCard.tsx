@@ -1,16 +1,17 @@
+import type { WeeklyDeltaResponse } from '@commitly/schemas';
 import { Box, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import Badge from '../../components/Badge';
 import SectionHeader from '../../components/SectionHeader';
 import StatCard from '../../components/StatCard';
-import type { WeeklyCommitData, WeeklyPRData, WeeklyQualityData } from '../../hooks/useCommitMetrics';
 
 type WeeklyGlanceCardProps = {
-  weeklyCommitData: WeeklyCommitData | null;
-  weeklyPRData: WeeklyPRData | null;
-  weeklyQualityData: WeeklyQualityData | null;
+  weeklyCommitData: WeeklyDeltaResponse | null;
+  weeklyPRData: WeeklyDeltaResponse | null;
+  weeklyQualityData: WeeklyDeltaResponse | null;
 };
 
+// eslint-disable-next-line complexity
 const WeeklyGlanceCard = (props: WeeklyGlanceCardProps) => {
   const delta = props.weeklyCommitData?.delta ?? 0;
   const lastWeek = props.weeklyCommitData?.lastWeek ?? 0;

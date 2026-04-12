@@ -1,11 +1,11 @@
+import type { ActiveRepo, StaleBranchesResponse } from '@commitly/schemas';
 import { alpha, Box, Typography } from '@mui/material';
 import Icon from '../../components/Icon';
 import StatusListItem from '../../components/StatusListItem';
-import type { ActiveRepoData, StaleBranchesData } from '../../hooks/useRepoMetrics';
 
 interface NeglectedReposSectionProps {
-  neglectedRepos: ActiveRepoData[];
-  staleBranches: StaleBranchesData | null;
+  neglectedRepos: ActiveRepo[];
+  staleBranches: StaleBranchesResponse | null;
   loading?: boolean;
 }
 
@@ -75,16 +75,24 @@ const NeglectedReposSection = ({ neglectedRepos, staleBranches, loading = false 
           overflow: 'hidden',
         }}
       >
-        {loading ? (
-          <Typography sx={{ p: 2, color: 'onSurfaceVariant', fontSize: '0.875rem' }}>
-            Loading neglected repositories...
-          </Typography>
-        ) : neglectedRepos.length === 0 ? (
-          <Typography sx={{ p: 2, color: 'onSurfaceVariant', fontSize: '0.875rem' }}>
-            No neglected repositories above the threshold.
-          </Typography>
-        ) : (
-          neglectedRepos.map((repo, i) => (
+        {(() => {
+          if (loading) {
+            return (
+              <Typography sx={{ p: 2, color: 'onSurfaceVariant', fontSize: '0.875rem' }}>
+                Loading neglected repositories...
+              </Typography>
+            );
+          }
+
+          if (neglectedRepos.length === 0) {
+            return (
+              <Typography sx={{ p: 2, color: 'onSurfaceVariant', fontSize: '0.875rem' }}>
+                No neglected repositories above the threshold.
+              </Typography>
+            );
+          }
+
+          return neglectedRepos.map((repo, i) => (
             <Box
               key={repo.name}
               sx={(theme) => ({
@@ -97,8 +105,8 @@ const NeglectedReposSection = ({ neglectedRepos, staleBranches, loading = false 
             >
               <StatusListItem label={repo.name} status={formatDaysSilent(repo.lastActivity)} pulse={i === 0} />
             </Box>
-          ))
-        )}
+          ));
+        })()}
       </Box>
 
       {/* Stale Branches */}

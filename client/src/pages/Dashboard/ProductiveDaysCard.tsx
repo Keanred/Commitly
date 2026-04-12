@@ -1,6 +1,6 @@
+import type { CommitsByDayResponse } from '@commitly/schemas';
 import { Box, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import type { CommitsByDayData } from '../../hooks/useCommitMetrics';
 
 // Outer pentagon vertices for each weekday (Mon–Fri)
 const OUTER_POINTS = [
@@ -34,7 +34,7 @@ function buildDataPolygon(commitByDay: Record<number, number>): string {
 }
 
 type ProductiveDaysCardProps = {
-  commitByDay: CommitsByDayData | null;
+  commitByDay: CommitsByDayResponse | null;
 };
 
 const ProductiveDaysCard = ({ commitByDay }: ProductiveDaysCardProps) => {

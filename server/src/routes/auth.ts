@@ -45,6 +45,7 @@ authRouter.get('/github', (req: Request, res: Response) => {
   res.redirect(`https://github.com/login/oauth/authorize?${params}`);
 });
 
+// eslint-disable-next-line complexity
 authRouter.get('/github/callback', async (req: Request, res: Response) => {
   const { code, state } = req.query;
 

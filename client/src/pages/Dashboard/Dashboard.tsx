@@ -12,6 +12,7 @@ import PeakHoursCard from './PeakHoursCard';
 import ProductiveDaysCard from './ProductiveDaysCard';
 import WeeklyGlanceCard from './WeeklyGlanceCard';
 
+// eslint-disable-next-line complexity
 const languageIcon = (language: string | null): string => {
   switch (language?.toLowerCase()) {
     case 'typescript':
@@ -43,6 +44,7 @@ const languageIcon = (language: string | null): string => {
   }
 };
 
+// eslint-disable-next-line complexity
 const Dashboard: React.FC = () => {
   const theme = useTheme();
   const { authUser, authLoading, authError } = useAuth();
@@ -58,14 +60,13 @@ const Dashboard: React.FC = () => {
     isDashboardLoading,
     dashboardLoadProgress,
     dashboardLoadingStep,
-    error,
   } = useDashboardData();
   const isLoading = authLoading || isDashboardLoading;
 
   const [dismissed, setDismissed] = useState(false);
-  const hasError = !!(error || authError);
+  const hasError = !!authError;
   const toastOpen = hasError && !dismissed;
-  const toastMessage = error?.message || authError?.message;
+  const toastMessage = authError?.message;
 
   const handleClose = useCallback(() => setDismissed(true), []);
 

@@ -9,61 +9,68 @@ interface MetricCardProps {
   sx?: SxProps<Theme>;
 }
 
-const MetricCard = ({ label, value, status, statusColor = 'onSurfaceVariant', sx }: MetricCardProps) => (
-  <Box
-    sx={[
-      {
-        bgcolor: 'surfaceContainer',
-        borderRadius: 3,
-        p: 3,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-      },
-      ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
-    ]}
-  >
+const MetricCard = ({ label, value, status, statusColor = 'onSurfaceVariant', sx }: MetricCardProps) => {
+  const normalizedSx = Array.isArray(sx) ? sx : [];
+  if (!Array.isArray(sx) && sx) {
+    normalizedSx.push(sx);
+  }
+
+  return (
     <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        mb: 0.5,
-      }}
+      sx={[
+        {
+          bgcolor: 'surfaceContainer',
+          borderRadius: 3,
+          p: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+        },
+        ...normalizedSx,
+      ]}
     >
-      <Typography
+      <Box
         sx={{
-          fontSize: '0.75rem',
-          fontWeight: 700,
-          color: 'onSurfaceVariant',
-          textTransform: 'uppercase',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 0.5,
         }}
       >
-        {label}
-      </Typography>
-      {status && (
         <Typography
           sx={{
             fontSize: '0.75rem',
             fontWeight: 700,
-            color: statusColor,
+            color: 'onSurfaceVariant',
+            textTransform: 'uppercase',
           }}
         >
-          {status}
+          {label}
         </Typography>
-      )}
+        {status && (
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              color: statusColor,
+            }}
+          >
+            {status}
+          </Typography>
+        )}
+      </Box>
+      <Typography
+        sx={{
+          fontSize: '1.875rem',
+          fontFamily: "'Manrope'",
+          fontWeight: 700,
+          color: 'onSurface',
+        }}
+      >
+        {value}
+      </Typography>
     </Box>
-    <Typography
-      sx={{
-        fontSize: '1.875rem',
-        fontFamily: "'Manrope'",
-        fontWeight: 700,
-        color: 'onSurface',
-      }}
-    >
-      {value}
-    </Typography>
-  </Box>
-);
+  );
+};
 
 export default MetricCard;

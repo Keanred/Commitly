@@ -19,7 +19,7 @@ commitsRouter.get('/fetch', async (req: Request, res: Response) => {
   let totalCommits = 0;
   for (const repo of repos) {
     const commits = await fetchRepoCommits(user.access_token, repo.full_name.split('/')[0], repo.name, user.login);
-    const commitInserts = commits.map((commit: any) => mapGitHubCommit(user.id, repo.id, commit));
+    const commitInserts = commits.map((commit) => mapGitHubCommit(user.id, repo.id, commit));
     await insertCommits(commitInserts);
     totalCommits += commitInserts.length;
   }

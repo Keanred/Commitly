@@ -32,11 +32,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       setLoading(false);
     };
-    loadUser();
+    void loadUser();
   }, [data, isError, isPending]);
 
   const refreshUser = async () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.auth.user });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.auth.user });
     if (isError) {
       setError(new Error('Failed to refresh user data'));
       setUser(null);

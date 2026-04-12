@@ -14,9 +14,7 @@ export async function getPullRequestsByUser(userId: number, since?: Date): Promi
 }
 
 export async function prunePullRequests(userId: number, cutoffDate: Date): Promise<void> {
-  await db
-    .delete(pullRequests)
-    .where(and(eq(pullRequests.user_id, userId), lt(pullRequests.created_at, cutoffDate)));
+  await db.delete(pullRequests).where(and(eq(pullRequests.user_id, userId), lt(pullRequests.created_at, cutoffDate)));
 }
 
 export async function insertPullRequests(prs: PullRequestInsert[]): Promise<void> {

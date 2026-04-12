@@ -1,6 +1,7 @@
 {
   "name": "commitly-server",
   "version": "1.0.0",
+  "type": "module",
   "license": "PolyForm-Noncommercial-1.0.0",
   "main": "dist/main.js",
   "scripts": {

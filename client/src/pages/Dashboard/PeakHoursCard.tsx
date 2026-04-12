@@ -1,9 +1,9 @@
+import type { CommitsByHourResponse } from '@commitly/schemas';
 import { Box, Typography } from '@mui/material';
 import { useMemo } from 'react';
 import ProgressBar from '../../components/ProgressBar';
-import type { CommitsByHourData } from '../../hooks/useCommitMetrics';
 type PeakHoursCardProps = {
-  commitByHour: CommitsByHourData | null;
+  commitByHour: CommitsByHourResponse | null;
 };
 
 const blockTimeRanges: Record<string, string> = {
@@ -22,7 +22,6 @@ const PeakHoursCard = (props: PeakHoursCardProps) => {
     const peak = entries[0][0];
     const range = blockTimeRanges[peak] ?? '';
     return `Peak productivity: ${peak} (${range})`;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.commitByHour]);
 
   return (

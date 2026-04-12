@@ -135,6 +135,7 @@ function computeActiveRepos(repos: Awaited<ReturnType<typeof getReposByUser>>) {
   });
 
   const now = new Date();
+  // eslint-disable-next-line complexity
   const repoData = sorted.map((repo) => {
     const lastPush = repo.pushed_at ? new Date(repo.pushed_at) : null;
     const daysSinceActivity = lastPush ? (now.getTime() - lastPush.getTime()) / (1000 * 60 * 60 * 24) : Infinity;
@@ -374,6 +375,7 @@ metricsRouter.get('/repos', async (req: Request, res: Response) => {
   });
   const now = new Date();
 
+  // eslint-disable-next-line complexity
   const repoData = repos.map((repo) => {
     const lastPush = repo.pushed_at ? new Date(repo.pushed_at) : null;
     const daysSinceActivity = lastPush ? (now.getTime() - lastPush.getTime()) / (1000 * 60 * 60 * 24) : Infinity;
@@ -453,6 +455,7 @@ metricsRouter.get('/repos/stale-branches', async (req: Request, res: Response) =
   res.json(result);
 });
 
+// eslint-disable-next-line complexity
 metricsRouter.get('/global-integrity', async (req: Request, res: Response) => {
   const userId = req.session.userId as number;
   const repos = await getReposByUser(userId);

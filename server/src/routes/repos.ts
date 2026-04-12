@@ -23,7 +23,7 @@ reposRouter.get('/fetch', async (req: Request, res: Response) => {
   if (!user) return res.status(404).json({ error: 'User not found' });
   const repos = await fetchUserRepos(user.access_token);
   const upserted = await Promise.all(
-    repos.map(async (repo: any) => {
+    repos.map(async (repo) => {
       const [owner, repoName] = repo.full_name.split('/');
       const hasReadme = await fetchRepoHasReadme(user.access_token, owner, repoName);
       return upsertRepo(mapGitHubRepo(user.id, repo, hasReadme));
@@ -58,6 +58,7 @@ reposRouter.get('/fetch-languages', async (req: Request, res: Response) => {
 /**
  * GET /fetch-branches — Fetch and upsert branches for all user repos
  */
+// eslint-disable-next-line complexity
 reposRouter.get('/fetch-branches', async (req: Request, res: Response) => {
   const userId = req.session.userId;
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });

@@ -5,9 +5,7 @@ export function toIsoDateKey(date: Date): string {
 }
 
 export function computeStreak(commits: Commit[]): { currentStreak: number; longestStreak: number } {
-  const commitDates = Array.from(
-    new Set(commits.map((commit) => toIsoDateKey(new Date(commit.committed_at)))),
-  ).sort();
+  const commitDates = Array.from(new Set(commits.map((commit) => toIsoDateKey(new Date(commit.committed_at))))).sort();
 
   let currentStreak = 0;
   let longestStreak = 0;
