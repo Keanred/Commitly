@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { memo, useMemo } from 'react';
+import { memo, useEffect, useMemo, useRef } from 'react';
 import type { CommitHistoryCell } from '../../hooks/useCommitMetrics';
 
 interface ContributionGridProps {
@@ -42,6 +42,8 @@ const DAY_LABEL_COLUMN_WIDTH = 18;
 const DAY_LABEL_COLUMN_GAP = 6;
 
 const ContributionGrid = ({ cells }: ContributionGridProps) => {
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
   if (!cells || cells.length === 0) {
     return null;
   }
@@ -53,15 +55,7 @@ const ContributionGrid = ({ cells }: ContributionGridProps) => {
     const firstDate = toDate(sorted[0].date);
     const lastDate = toDate(sorted[sorted.length - 1].date);
 
-    let visibleStart = new Date(firstDate);
-    if (firstDate.getDate() !== 1) {
-      const nextMonthStart = new Date(firstDate.getFullYear(), firstDate.getMonth() + 1, 1);
-      if (nextMonthStart <= lastDate) {
-        visibleStart = nextMonthStart;
-      }
-    }
-
-    const gridStart = addDays(visibleStart, -visibleStart.getDay());
+    const gridStart = addDays(firstDate, -firstDate.getDay());
     const gridEnd = addDays(lastDate, 6 - lastDate.getDay());
 
     const computedWeeks: RenderCell[][] = [];
@@ -71,7 +65,7 @@ const ContributionGrid = ({ cells }: ContributionGridProps) => {
       const week: RenderCell[] = [];
       for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
         const key = toKey(cursor);
-        const isPadding = cursor < visibleStart;
+        const isPadding = cursor < firstDate;
         const existing = cellMap.get(key);
         week.push(existing ? { ...existing, isPadding } : { date: key, count: 0, intensity: 0, isPadding });
         cursor = addDays(cursor, 1);
@@ -81,7 +75,7 @@ const ContributionGrid = ({ cells }: ContributionGridProps) => {
 
     const monthLabels: Array<{ label: string; column: number }> = [];
     const seenColumns = new Set<number>();
-    let labelCursor = new Date(visibleStart);
+    let labelCursor = new Date(firstDate);
     while (labelCursor <= lastDate) {
       if (labelCursor.getDate() === 1) {
         const dayOffset = Math.floor((labelCursor.getTime() - gridStart.getTime()) / (1000 * 60 * 60 * 24));
@@ -99,7 +93,7 @@ const ContributionGrid = ({ cells }: ContributionGridProps) => {
 
     if (monthLabels.length === 0 || monthLabels[0].column > 1) {
       monthLabels.unshift({
-        label: visibleStart.toLocaleDateString('en-US', { month: 'short' }),
+        label: firstDate.toLocaleDateString('en-US', { month: 'short' }),
         column: 0,
       });
     }
@@ -141,8 +135,23 @@ const ContributionGrid = ({ cells }: ContributionGridProps) => {
     md: `repeat(${weekColumns}, minmax(0, 1fr))`,
   };
 
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    // Show the newest weeks first in horizontal overflow scenarios.
+    const alignToLatest = () => {
+      el.scrollLeft = el.scrollWidth;
+    };
+
+    alignToLatest();
+    const rafId = requestAnimationFrame(alignToLatest);
+    return () => cancelAnimationFrame(rafId);
+  }, [weekColumns]);
+
   return (
     <Box
+      ref={scrollContainerRef}
       sx={{
         overflowX: { xs: 'auto', md: 'hidden' },
         pb: 0.5,

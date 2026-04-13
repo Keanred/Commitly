@@ -12,6 +12,7 @@ import {
   upsertLanguage,
   upsertRepo,
 } from '../db/queries';
+import { invalidateDashboardCacheForUser } from '../metrics/dashboardCache';
 import { computeStreak } from '../metrics/streakHelper';
 import type { User } from '../types/models';
 import {
@@ -107,4 +108,7 @@ export async function syncUserData(user: User, accessToken: string): Promise<voi
   const cutoffDate = new Date();
   cutoffDate.setMonth(cutoffDate.getMonth() - 13);
   await Promise.all([pruneCommits(user.id, cutoffDate), prunePullRequests(user.id, cutoffDate)]);
+
+  // Ensure any cached pre-sync dashboard snapshot is dropped.
+  invalidateDashboardCacheForUser(user.id);
 }

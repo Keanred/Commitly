@@ -21,7 +21,7 @@ const LABELS = [
   { text: 'FRI', top: '25%', left: 0, transform: 'translateX(-16px)' },
 ] as const;
 
-// Day keys in commitByDay (0 = Mon … 4 = Fri)
+// Day keys are normalized in transforms.ts to Monday-first (0 = Mon ... 6 = Sun).
 const DAY_KEYS = [0, 1, 2, 3, 4];
 
 function buildDataPolygon(commitByDay: Record<number, number>): string {

@@ -1,11 +1,12 @@
 import { Alert, Avatar, Box, Snackbar, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../AuthContext';
 import Badge from '../../components/Badge';
 import RepoCard from '../../components/RepoCard';
 import SectionHeader from '../../components/SectionHeader';
 import { useDashboardData } from '../../hooks/useDashboardData';
+import { useSyncData } from '../../hooks/useSyncData';
 import LoadingScreen from '../LoadingScreen';
 import CommitStreakCard from './CommitStreakCard';
 import PeakHoursCard from './PeakHoursCard';
@@ -61,18 +62,80 @@ const Dashboard: React.FC = () => {
     dashboardLoadProgress,
     dashboardLoadingStep,
   } = useDashboardData();
-  const isLoading = authLoading || isDashboardLoading;
+  const { sync, syncing, progress, error: syncError } = useSyncData();
 
   const [dismissed, setDismissed] = useState(false);
-  const hasError = !!authError;
+  const [syncAttempted, setSyncAttempted] = useState(false);
+
+  const hasAnyDashboardData = useMemo(() => {
+    const hasActiveRepos = (activeRepos?.length ?? 0) > 0;
+    const hasStreak = (streak?.currentStreak ?? 0) > 0 || (streak?.longestStreak ?? 0) > 0;
+    const hasWeeklyData = [weeklyCommitData, weeklyPRData, weeklyQualityData].some(
+      (entry) => (entry?.thisWeek ?? 0) > 0 || (entry?.lastWeek ?? 0) > 0,
+    );
+    const hasHourlyActivity = Object.values(commitByHour?.commitByHour ?? {}).some((value) => value > 0);
+    const hasDailyActivity = Object.values(commitByDay?.commitByDay ?? {}).some((value) => value > 0);
+
+    return hasActiveRepos || hasStreak || hasWeeklyData || hasHourlyActivity || hasDailyActivity;
+  }, [activeRepos, streak, weeklyCommitData, weeklyPRData, weeklyQualityData, commitByHour, commitByDay]);
+
+  useEffect(() => {
+    if (!authLoading && !isDashboardLoading && !syncing && !syncAttempted && !hasAnyDashboardData) {
+      setSyncAttempted(true);
+      sync();
+    }
+  }, [authLoading, isDashboardLoading, syncing, syncAttempted, hasAnyDashboardData, sync]);
+
+  const syncStatus = useMemo(() => {
+    switch (progress.currentStep) {
+      case 'repos':
+        return 'Syncing repositories';
+      case 'commits':
+        return 'Syncing commits';
+      case 'languages':
+        return 'Syncing languages';
+      case 'branches':
+        return 'Syncing branches';
+      default:
+        return 'Syncing GitHub data';
+    }
+  }, [progress.currentStep]);
+
+  const syncLoadProgress = useMemo(() => {
+    const totalSteps = 4;
+    const completed = progress.completedSteps.length;
+    const inStepBonus = progress.currentStep ? 12 : 0;
+    const value = Math.round((completed / totalSteps) * 100 + inStepBonus);
+    return Math.max(10, Math.min(100, value));
+  }, [progress.completedSteps.length, progress.currentStep]);
+
+  const isLoading = authLoading || isDashboardLoading || syncing;
+  let syncErrorMessage: string | null = null;
+  if (syncError instanceof Error) {
+    syncErrorMessage = syncError.message;
+  } else if (syncError) {
+    syncErrorMessage = 'Failed to sync data';
+  }
+
+  const hasError = !!authError || !!syncError;
   const toastOpen = hasError && !dismissed;
-  const toastMessage = authError?.message;
+  const toastMessage = authError?.message ?? syncErrorMessage;
 
   const handleClose = useCallback(() => setDismissed(true), []);
 
   if (isLoading) {
-    const status = authLoading ? 'Verifying authentication session' : dashboardLoadingStep;
-    return <LoadingScreen progress={dashboardLoadProgress} status={status} />;
+    let status = dashboardLoadingStep;
+    let progressValue = dashboardLoadProgress;
+
+    if (authLoading) {
+      status = 'Verifying authentication session';
+      progressValue = 15;
+    } else if (syncing) {
+      status = syncStatus;
+      progressValue = syncLoadProgress;
+    }
+
+    return <LoadingScreen progress={progressValue} status={status} />;
   }
 
   return (

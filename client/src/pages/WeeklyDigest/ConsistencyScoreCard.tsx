@@ -1,7 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import BarChart from '../../components/BarChart';
 
-const bars = [
+const fallbackBars = [
   { value: 60, label: 'MON' },
   { value: 40, label: 'TUE' },
   { value: 95, label: 'WED' },
@@ -11,7 +11,12 @@ const bars = [
   { value: 50, label: 'SUN' },
 ];
 
-const ConsistencyScoreCard = () => (
+type ConsistencyScoreCardProps = {
+  score?: number;
+  bars?: Array<{ value: number; label: string }>;
+};
+
+const ConsistencyScoreCard = ({ score = 0, bars = fallbackBars }: ConsistencyScoreCardProps) => (
   <Box
     sx={{
       bgcolor: 'surfaceContainerLow',
@@ -48,10 +53,10 @@ const ConsistencyScoreCard = () => (
           fontWeight: 900,
         }}
       >
-        94
+        {score}
       </Typography>
     </Box>
-    <BarChart bars={bars} activeIndices={[2, 4]} />
+    <BarChart bars={bars} />
   </Box>
 );
 

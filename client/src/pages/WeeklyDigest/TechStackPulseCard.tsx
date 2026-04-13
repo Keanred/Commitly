@@ -1,13 +1,19 @@
 import { Box, Typography } from '@mui/material';
 import StackBar from '../../components/StackBar';
 
-const languages = [
+const fallbackLanguages = [
   { label: 'TypeScript', percentage: 68, color: 'primary.main' },
   { label: 'Rust', percentage: 22, color: 'tertiary.main' },
   { label: 'Go', percentage: 10, color: 'secondary.main' },
 ];
 
-const TechStackPulseCard = () => (
+const COLORS = ['primary.main', 'tertiary.main', 'secondary.main', 'error.main', 'warning.main'];
+
+type TechStackPulseCardProps = {
+  languages?: Array<{ label: string; percentage: number }>;
+};
+
+const TechStackPulseCard = ({ languages = fallbackLanguages }: TechStackPulseCardProps) => (
   <Box
     sx={{
       bgcolor: 'surfaceContainer',
@@ -31,8 +37,13 @@ const TechStackPulseCard = () => (
       Tech Stack Pulse
     </Typography>
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {languages.map((lang) => (
-        <StackBar key={lang.label} label={lang.label} percentage={lang.percentage} color={lang.color} />
+      {languages.map((lang, index) => (
+        <StackBar
+          key={lang.label}
+          label={lang.label}
+          percentage={lang.percentage}
+          color={COLORS[index % COLORS.length]}
+        />
       ))}
     </Box>
   </Box>
